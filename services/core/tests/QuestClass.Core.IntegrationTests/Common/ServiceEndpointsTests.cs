@@ -5,19 +5,26 @@ using Shouldly;
 
 namespace QuestClass.Core.IntegrationTests.Common
 {
-    public sealed class ServiceEndpointsTests : IClassFixture<CoreApiFactory>
+    public sealed class ServiceEndpointsTests : IntegrationTestBase
     {
-        private readonly HttpClient _client;
-
-        public ServiceEndpointsTests(CoreApiFactory factory)
+        public ServiceEndpointsTests(IntegrationTestFixture fixture)
+            : base(fixture)
         {
-            _client = factory.CreateClient();
         }
 
         [Fact]
         public async Task LivenessCheck_ShouldReturnHealthy()
         {
-            var response = await _client.GetAsync("/health/live");
+            var response = await Client.GetAsync("/health/live");
+
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).ShouldBe("Healthy");
+        }
+
+        [Fact]
+        public async Task ReadinessCheck_WhenDatabaseIsReachable_ShouldReturnHealthy()
+        {
+            var response = await Client.GetAsync("/health/ready");
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
             (await response.Content.ReadAsStringAsync()).ShouldBe("Healthy");
@@ -26,7 +33,7 @@ namespace QuestClass.Core.IntegrationTests.Common
         [Fact]
         public async Task OpenApiDocument_ShouldBeServedUnderCorePrefix()
         {
-            var response = await _client.GetAsync("/api/core/swagger/v1/swagger.json");
+            var response = await Client.GetAsync("/api/core/swagger/v1/swagger.json");
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
@@ -38,7 +45,7 @@ namespace QuestClass.Core.IntegrationTests.Common
         [Fact]
         public async Task SwaggerUi_ShouldBeServedUnderCorePrefix()
         {
-            var response = await _client.GetAsync("/api/core/swagger/index.html");
+            var response = await Client.GetAsync("/api/core/swagger/index.html");
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
         }

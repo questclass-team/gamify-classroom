@@ -2,8 +2,13 @@ using System.Reflection;
 using FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using QuestClass.Core.Common.Api;
+using QuestClass.Core.Common.Configuration;
+using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,8 +64,46 @@ builder.Services.AddProblemDetails(options =>
 });
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// Database
+builder.Services
+    .AddOptions<DatabaseOptions>()
+    .BindConfiguration(DatabaseOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IValidateOptions<DatabaseOptions>, DatabaseOptionsValidator>();
+
+builder.Services.AddSingleton<SoftDeleteInterceptor>();
+
+builder.Services.AddDbContext<CoreDbContext>((serviceProvider, options) =>
+{
+    var databaseOptions = serviceProvider
+        .GetRequiredService<IOptions<DatabaseOptions>>()
+        .Value;
+
+    options.AddInterceptors(serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
+
+    options
+        .UseNpgsql(
+            databaseOptions.Core,
+            npgsqlOptions =>
+            {
+                npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", CoreDbContext.Schema);
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(2),
+                    errorCodesToAdd: null);
+            })
+        // Tables and columns as PostgreSQL expects them: users.first_name, not "Users"."FirstName".
+        .UseSnakeCaseNamingConvention();
+});
+
+// Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
 // Health Checks
-builder.Services.AddHealthChecks();
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<CoreDbContext>(name: "postgresql", tags: ["ready"]);
 
 // Time Abstraction
 builder.Services.AddSingleton(TimeProvider.System);
@@ -87,10 +130,15 @@ app.UseSwaggerUI(options =>
 
 app.MapControllers();
 
-// Liveness only: the process is up. Readiness (database) is added together with the database.
+// Liveness: the process is up. Readiness: the database is reachable.
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = healthCheck => healthCheck.Tags.Contains("ready")
 });
 
 app.Run();
