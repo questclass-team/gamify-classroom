@@ -13,7 +13,9 @@ namespace QuestClass.Core.Features.Auth.Login
         private readonly ILdapAuthenticator _ldapAuthenticator;
         private readonly IUserRepository _userRepository;
         private readonly IJwtTokenIssuer _tokenIssuer;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly BootstrapOptions _bootstrapOptions;
+        private readonly RefreshTokenOptions _refreshTokenOptions;
         private readonly TimeProvider _timeProvider;
         private readonly ILogger<LoginHandler> _logger;
 
@@ -21,19 +23,23 @@ namespace QuestClass.Core.Features.Auth.Login
             ILdapAuthenticator ldapAuthenticator,
             IUserRepository userRepository,
             IJwtTokenIssuer tokenIssuer,
+            IRefreshTokenRepository refreshTokenRepository,
             IOptions<BootstrapOptions> bootstrapOptions,
+            IOptions<RefreshTokenOptions> refreshTokenOptions,
             TimeProvider timeProvider,
             ILogger<LoginHandler> logger)
         {
             _ldapAuthenticator = ldapAuthenticator;
             _userRepository = userRepository;
             _tokenIssuer = tokenIssuer;
+            _refreshTokenRepository = refreshTokenRepository;
             _bootstrapOptions = bootstrapOptions.Value;
+            _refreshTokenOptions = refreshTokenOptions.Value;
             _timeProvider = timeProvider;
             _logger = logger;
         }
 
-        public async Task<Result<LoginResponse>> HandleAsync(
+        public async Task<Result<AuthSession>> HandleAsync(
             LoginRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -46,7 +52,7 @@ namespace QuestClass.Core.Features.Auth.Login
             {
                 _logger.LogInformation("Login rejected. Login: {Login}, reason: invalid credentials", login);
 
-                return Result<LoginResponse>.Failure(AuthErrors.InvalidCredentials());
+                return Result<AuthSession>.Failure(AuthErrors.InvalidCredentials());
             }
 
             var now = _timeProvider.GetUtcNow();
@@ -60,7 +66,7 @@ namespace QuestClass.Core.Features.Auth.Login
                 {
                     _logger.LogInformation("Login rejected. Login: {Login}, reason: account not imported", login);
 
-                    return Result<LoginResponse>.Failure(AuthErrors.AccountNotImported());
+                    return Result<AuthSession>.Failure(AuthErrors.AccountNotImported());
                 }
 
                 user = CreateBootstrapAdmin(login, directoryUser, now);
@@ -79,9 +85,17 @@ namespace QuestClass.Core.Features.Auth.Login
             // 4. Access token with the role from our database (LDAP knows nothing about roles).
             var accessToken = _tokenIssuer.Issue(user);
 
+            // 5. A new session: its refresh token goes to the cookie; the session ends after a fixed time.
+            await _refreshTokenRepository.DeleteExpiredAsync(user.Id, now, cancellationToken);
+
+            var sessionExpiresAt = now.AddHours(_refreshTokenOptions.SessionLifetimeHours);
+            var (storedToken, issuedToken) = RefreshTokenFactory.Create(user.Id, now, sessionExpiresAt);
+            await _refreshTokenRepository.AddAsync(storedToken, cancellationToken);
+
             _logger.LogInformation("User logged in. UserId: {UserId}, Role: {Role}", user.Id, user.Role.ToApiName());
 
-            return Result<LoginResponse>.Success(ToResponse(user, accessToken));
+            return Result<AuthSession>.Success(
+                new AuthSession(new AuthResponse(accessToken.Token, user.ToCurrentUserResponse()), issuedToken));
         }
 
         /// <summary>
@@ -126,11 +140,6 @@ namespace QuestClass.Core.Features.Auth.Login
             return trimmed.Length <= User.NameMaxLength
                 ? trimmed
                 : trimmed[..User.NameMaxLength];
-        }
-
-        private static LoginResponse ToResponse(User user, AccessToken accessToken)
-        {
-            return new LoginResponse(accessToken.Token, user.ToCurrentUserResponse());
         }
     }
 }

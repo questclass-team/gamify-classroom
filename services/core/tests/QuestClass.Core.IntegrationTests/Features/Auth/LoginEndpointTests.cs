@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Login;
+using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using QuestClass.Core.Repositories;
 using Shouldly;
@@ -28,7 +28,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "nauczyciel", password = "haslo" });
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.Id.ShouldBe(user.Id);
             body.User.Login.ShouldBe("nauczyciel");
             body.User.Role.ShouldBe("teacher");
@@ -39,13 +39,40 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
         }
 
         [Fact]
+        public async Task Login_ShouldSetHttpOnlySecureRefreshCookieForAuthEndpointsOnly()
+        {
+            await AddUserAsync("student");
+
+            var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "student", password = "haslo" });
+
+            var cookie = SessionClient.FindRefreshCookie(response).ShouldNotBeNull();
+            cookie.HttpOnly.ShouldBeTrue();
+            cookie.Secure.ShouldBeTrue();
+            cookie.SameSite.ShouldBe(Microsoft.Net.Http.Headers.SameSiteMode.Strict);
+            cookie.Path.ToString().ShouldBe("/api/core/auth");
+            cookie.Expires!.Value.ShouldBe(DateTimeOffset.UtcNow.AddHours(8), TimeSpan.FromMinutes(1));
+
+            // The token is only in the cookie, never in the body that JavaScript can read.
+            (await response.Content.ReadAsStringAsync()).ShouldNotContain(cookie.Value.ToString());
+        }
+
+        [Fact]
+        public async Task Login_WhenRejected_ShouldNotSetARefreshCookie()
+        {
+            var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "nowy", password = "haslo" });
+
+            response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            SessionClient.FindRefreshCookie(response).ShouldBeNull();
+        }
+
+        [Fact]
         public async Task Login_ShouldRefreshNamesFromDirectoryAndRecordLoginTime()
         {
             var user = await AddUserAsync("mwisniewski", Role.Teacher, "Marek", "Wisniewski");
 
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "mwisniewski", password = "haslo" });
 
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.DisplayName.ShouldBe("Marek Wiśniewski");
 
             using var scope = CreateScope();
@@ -99,7 +126,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "admin", password = "haslo" });
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.Role.ShouldBe("admin");
             body.User.DisplayName.ShouldBe("Anna Administratorka");
 

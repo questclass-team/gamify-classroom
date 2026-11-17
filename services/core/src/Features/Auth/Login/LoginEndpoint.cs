@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using QuestClass.Core.Common.Api;
+using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Tokens;
 
 namespace QuestClass.Core.Features.Auth.Login
 {
@@ -9,8 +11,11 @@ namespace QuestClass.Core.Features.Auth.Login
     [Tags("Auth")]
     public sealed class LoginEndpoint : ApiControllerBase
     {
-        /// <summary>Logs in with a faculty LDAP account and returns an access token.</summary>
-        /// <response code="200">Logged in.</response>
+        /// <summary>
+        /// Logs in with a faculty LDAP account: returns an access token and sets the refresh token cookie
+        /// (<c>qc_refresh</c>, HttpOnly) that <c>POST /api/core/auth/refresh</c> uses.
+        /// </summary>
+        /// <response code="200">Logged in; the response also sets the refresh token cookie.</response>
         /// <response code="400">Login or password is missing or malformed.</response>
         /// <response code="401">Wrong login or password.</response>
         /// <response code="403">Valid faculty account that was not imported into QuestClass.</response>
@@ -18,12 +23,12 @@ namespace QuestClass.Core.Features.Auth.Login
         [HttpPost]
         [AllowAnonymous]
         [EnableRateLimiting(RateLimitPolicies.Login)]
-        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(HttpValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
-        public async Task<ActionResult<LoginResponse>> Handle(
+        public async Task<ActionResult<AuthResponse>> Handle(
             [FromBody] LoginRequest request,
             [FromServices] LoginHandler handler,
             CancellationToken cancellationToken)
@@ -35,7 +40,12 @@ namespace QuestClass.Core.Features.Auth.Login
                 return HandleFailure(result);
             }
 
-            return Ok(result.Value);
+            if (result.Value.RefreshToken is not null)
+            {
+                RefreshTokenCookie.Append(Response, result.Value.RefreshToken);
+            }
+
+            return Ok(result.Value.Response);
         }
     }
 }

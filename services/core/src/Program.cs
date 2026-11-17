@@ -15,7 +15,9 @@ using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Login;
+using QuestClass.Core.Features.Auth.Logout;
 using QuestClass.Core.Features.Auth.Me;
+using QuestClass.Core.Features.Auth.Refresh;
 using QuestClass.Core.Features.Auth.Shared.Authorization;
 using QuestClass.Core.Features.Auth.Shared.Ldap;
 using QuestClass.Core.Features.Auth.Shared.Tokens;
@@ -144,6 +146,13 @@ builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>
 builder.Services.AddSingleton<IJwtTokenIssuer, JwtTokenIssuer>();
 
 builder.Services
+    .AddOptions<RefreshTokenOptions>()
+    .BindConfiguration(RefreshTokenOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IValidateOptions<RefreshTokenOptions>, RefreshTokenOptionsValidator>();
+
+builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -173,6 +182,8 @@ builder.Services
 
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<GetCurrentUserHandler>();
+builder.Services.AddScoped<RefreshHandler>();
+builder.Services.AddScoped<LogoutHandler>();
 
 // Rate Limiting
 builder.Services
@@ -214,6 +225,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Health Checks
 builder.Services

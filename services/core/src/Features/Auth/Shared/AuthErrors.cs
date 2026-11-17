@@ -26,6 +26,17 @@ namespace QuestClass.Core.Features.Auth.Shared
                 "The account of this session no longer exists. Please log in again.");
         }
 
+        /// <summary>
+        /// The refresh cookie is missing, unknown, expired, logged out or reused. One answer for all of them; the log
+        /// says which. The frontend logs the user out.
+        /// </summary>
+        public static Error InvalidRefreshToken()
+        {
+            return Error.Unauthorized(
+                "Auth.InvalidRefreshToken",
+                "The session has ended. Please log in again.");
+        }
+
         /// <summary>The directory accepted the password, but the account was never imported from CSV.</summary>
         public static Error AccountNotImported()
         {

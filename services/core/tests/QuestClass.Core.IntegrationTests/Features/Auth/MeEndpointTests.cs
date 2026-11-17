@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Login;
 using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.Features.Auth.Shared.Tokens;
 using QuestClass.Core.IntegrationTests.Infrastructure;
@@ -34,7 +33,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
         {
             var user = await AddUserAsync("student");
             var login = await Client.PostAsJsonAsync("/api/core/auth/login", new { login = "student", password = "haslo" });
-            var token = (await login.Content.ReadFromJsonAsync<LoginResponse>())!.AccessToken;
+            var token = (await login.Content.ReadFromJsonAsync<AuthResponse>())!.AccessToken;
 
             var response = await GetMeAsync(token);
 

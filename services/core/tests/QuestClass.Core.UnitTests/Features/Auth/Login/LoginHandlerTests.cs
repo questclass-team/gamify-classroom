@@ -20,6 +20,7 @@ namespace QuestClass.Core.UnitTests.Features.Auth.Login
         private readonly ILdapAuthenticator _ldap = Substitute.For<ILdapAuthenticator>();
         private readonly IUserRepository _users = Substitute.For<IUserRepository>();
         private readonly IJwtTokenIssuer _tokens = Substitute.For<IJwtTokenIssuer>();
+        private readonly IRefreshTokenRepository _refreshTokens = Substitute.For<IRefreshTokenRepository>();
         private readonly FakeTimeProvider _timeProvider = new(new DateTimeOffset(2026, 11, 18, 9, 0, 0, TimeSpan.Zero));
 
         public LoginHandlerTests()
@@ -64,8 +65,8 @@ namespace QuestClass.Core.UnitTests.Features.Auth.Login
             var result = await CreateHandler().HandleAsync(new LoginRequest("nauczyciel", Password));
 
             result.IsSuccess.ShouldBeTrue();
-            result.Value.AccessToken.ShouldBe("issued-token");
-            result.Value.User.ShouldBe(new CurrentUserResponse(user.Id, "nauczyciel", "Jan Kowalski", "teacher"));
+            result.Value.Response.AccessToken.ShouldBe("issued-token");
+            result.Value.Response.User.ShouldBe(new CurrentUserResponse(user.Id, "nauczyciel", "Jan Kowalski", "teacher"));
         }
 
         [Fact]
@@ -115,8 +116,8 @@ namespace QuestClass.Core.UnitTests.Features.Auth.Login
             var result = await CreateHandler(bootstrapAdmins: "admin").HandleAsync(new LoginRequest("admin", Password));
 
             result.IsSuccess.ShouldBeTrue();
-            result.Value.User.Role.ShouldBe("admin");
-            result.Value.User.DisplayName.ShouldBe("Anna Administratorka");
+            result.Value.Response.User.Role.ShouldBe("admin");
+            result.Value.Response.User.DisplayName.ShouldBe("Anna Administratorka");
             await _users.Received(1).AddAsync(
                 Arg.Is<User>(user => user.Login == "admin" && user.Role == Role.Admin),
                 Arg.Any<CancellationToken>());
@@ -143,8 +144,53 @@ namespace QuestClass.Core.UnitTests.Features.Auth.Login
 
             var result = await CreateHandler(bootstrapAdmins: "admin").HandleAsync(new LoginRequest("admin", Password));
 
-            result.Value.User.Role.ShouldBe("student");
+            result.Value.Response.User.Role.ShouldBe("student");
             await _users.DidNotReceiveWithAnyArgs().AddAsync(default!);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldStartEightHourSessionWithHashedRefreshToken()
+        {
+            var user = ImportedUser("student");
+            DirectoryAccepts("student", new LdapUser("Ewa", "Nowak"));
+            _users.GetByLoginAsync("student", Arg.Any<CancellationToken>()).Returns(user);
+
+            var result = await CreateHandler().HandleAsync(new LoginRequest("student", Password));
+
+            var issued = result.Value.RefreshToken.ShouldNotBeNull();
+            issued.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().AddHours(8));
+            await _refreshTokens.Received(1).AddAsync(
+                Arg.Is<RefreshToken>(stored =>
+                    stored.UserId == user.Id
+                    && stored.TokenHash == RefreshTokenGenerator.Hash(issued.Token)
+                    && stored.ExpiresAt == issued.ExpiresAt
+                    && stored.RevokedAt == null),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldRemoveTheUsersExpiredSessions()
+        {
+            var user = ImportedUser("student");
+            DirectoryAccepts("student", new LdapUser("Ewa", "Nowak"));
+            _users.GetByLoginAsync("student", Arg.Any<CancellationToken>()).Returns(user);
+
+            await CreateHandler().HandleAsync(new LoginRequest("student", Password));
+
+            await _refreshTokens.Received(1).DeleteExpiredAsync(
+                user.Id,
+                _timeProvider.GetUtcNow(),
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task HandleAsync_WhenLoginFails_ShouldNotStartASession()
+        {
+            DirectoryAccepts("nowy", new LdapUser("Nowy", "Użytkownik"));
+
+            await CreateHandler().HandleAsync(new LoginRequest("nowy", Password));
+
+            await _refreshTokens.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         private LoginHandler CreateHandler(string bootstrapAdmins = "")
@@ -153,7 +199,9 @@ namespace QuestClass.Core.UnitTests.Features.Auth.Login
                 _ldap,
                 _users,
                 _tokens,
+                _refreshTokens,
                 Options.Create(new BootstrapOptions { AdminLogins = bootstrapAdmins }),
+                Options.Create(new RefreshTokenOptions()),
                 _timeProvider,
                 NullLogger<LoginHandler>.Instance);
         }
