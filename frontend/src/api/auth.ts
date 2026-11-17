@@ -12,3 +12,10 @@ export function login(credentials: LoginRequest): Promise<LoginResponse> {
 export function fetchCurrentUser(signal?: AbortSignal): Promise<CurrentUser> {
   return apiRequest<CurrentUser>('/api/core/auth/me', { signal })
 }
+
+/** Ends the session on the server (revokes the refresh cookie). Needs no access token. */
+export function logout(): Promise<void> {
+  return apiRequest<void>('/api/core/auth/logout', { method: 'POST', auth: false })
+}
+
+export { refreshSession } from './client'
