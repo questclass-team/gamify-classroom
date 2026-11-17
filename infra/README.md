@@ -40,6 +40,34 @@ volume; after changing it run `docker compose down -v`.
 ldapwhoami -x -H ldap://localhost:389 -D "uid=student,ou=people,dc=labs,dc=questclass,dc=test" -w haslo
 ```
 
+## Smoke test
+
+[`smoke-test.sh`](smoke-test.sh) checks a running stack: frontend and SPA routes, API routing, LDAP logins and
+schema permissions. CI runs it on every PR that touches infra, the frontend or core.
+
+```sh
+docker compose up --build --wait && infra/smoke-test.sh
+```
+
+## Running a service locally against this database
+
+Use the Compose database instead of starting another PostgreSQL container, so there is one database per
+machine and it has the same schemas and permissions as in CI:
+
+```sh
+docker compose up -d --wait postgres ldap
+```
+
+Connect as the service's own role, e.g. for core (port and password from your `.env`):
+
+```
+ConnectionStrings__Core="Host=localhost;Port=5432;Database=questclass;Username=core_user;Password=core-dev-password"
+```
+
+Core's migrations are applied manually: `dotnet ef database update --project src` from `services/core`.
+CI applies them the same way against the Compose database, so a migration that needs more than
+`core_user`'s rights fails there.
+
 ## Adding the core or game service
 
 nginx already routes to them. Keep `condition: service_healthy`: a plain `depends_on` only waits for the
@@ -50,18 +78,24 @@ container to start, not for PostgreSQL to accept connections. Add a block like t
     <<: *defaults  # restart policy, no-new-privileges, log rotation
     build: services/core
     environment:
-      ConnectionStrings__Default: Host=postgres;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD}
+      ConnectionStrings__Core: Host=postgres;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD}
       Ldap__Host: ldap
       Ldap__BaseDn: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
     depends_on:
-      postgres:
-        condition: service_healthy
+      core-migrate:
+        condition: service_completed_successfully
       ldap:
         condition: service_healthy
     healthcheck:
-      # The .NET runtime image has no curl/wget: install one in the Dockerfile or use another probe.
-      test: ["CMD", "curl", "-fs", "http://127.0.0.1:8080/health/live"]
+      # /health/ready also checks the database. The .NET runtime image has no curl/wget:
+      # install one in the Dockerfile or use another probe.
+      test: ["CMD", "curl", "-fs", "http://127.0.0.1:8080/health/ready"]
 ```
 
-Setting names are examples; use whatever the service reads. Inside Docker the hosts are `postgres:5432` and
-`ldap:389`; from your machine they are `localhost:${POSTGRES_PORT}` and `localhost:${LDAP_PORT}`.
+Core does not apply migrations on startup, so the stack needs a one-shot `core-migrate` service (for example an
+SDK build stage running `dotnet ef database update`, or a `dotnet ef migrations bundle`) that depends on
+`postgres: condition: service_healthy` and exits when done; `core` then waits for it with
+`service_completed_successfully` as above.
+
+Other setting names are examples; use whatever the service reads. Inside Docker the hosts are `postgres:5432`
+and `ldap:389`; from your machine they are `localhost:${POSTGRES_PORT}` and `localhost:${LDAP_PORT}`.

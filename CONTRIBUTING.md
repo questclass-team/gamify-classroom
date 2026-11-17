@@ -87,6 +87,8 @@ Review within **24 hours**. Be specific: point to the line, explain why, suggest
 
 - Only the areas the PR changes are checked (`frontend/`, `services/core/`, `services/game/`). A change to the workflow checks everything.
 - Every PR also gets a secret scan (gitleaks) of its new commits.
+- Core: `dotnet ef migrations has-pending-model-changes` fails when an entity change has no migration.
+- Changes to `infra/`, `docker-compose.yml`, the frontend or core start the whole stack, run [`infra/smoke-test.sh`](infra/smoke-test.sh) and apply core's migrations as `core_user`. Infra changes are also linted (hadolint, shellcheck).
 - **`ci-ok`** sums up the run and is the only check that should be required for merging. Skipped jobs count as passed.
 - A failing job runs the same commands as the table above, so reproduce it locally with them.
 - Game service: the job starts once `services/game/pyproject.toml` exists. It needs a committed `uv.lock`, with `ruff` and `pytest` as dev dependencies.

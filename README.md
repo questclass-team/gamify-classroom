@@ -114,6 +114,7 @@
 # 🚀 Quick start
 
 You only need **Git** and **Docker** (Docker Desktop on macOS/Windows) to run the whole stack.
+It needs **Docker Engine 25+** with **Compose v2.20+** (Docker Desktop 4.27 or newer); check with `docker version` and `docker compose version`.
 
 > [!NOTE]
 > **Windows:** clone the repository inside WSL 2 or set `git config --global core.autocrlf input` before cloning. Shell scripts with Windows line endings (`CRLF`) break inside Linux containers.
