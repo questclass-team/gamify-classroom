@@ -1,53 +1,32 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import { apiErrorMessage } from '../../api/errorMessage'
 import { createGroup, fetchGroups } from '../../api/groups'
 import { GROUP_NAME_MAX_LENGTH, type GroupSummary } from '../../api/types'
+import { useApiData, type LoadState } from '../../api/useApiData'
 import {
   Alert,
   Button,
+  ErrorWithRetry,
   PageHeader,
   Panel,
   SectionTitle,
   Table,
   TextField,
 } from '../../components/ui'
-
-type GroupsState =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; groups: GroupSummary[] }
-
-const dateFormat = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
+import { dateFormat } from '../../format'
 
 const CREATE_ERRORS = {
   400: `Nazwa grupy jest wymagana i może mieć najwyżej ${GROUP_NAME_MAX_LENGTH} znaków.`,
 }
 
 export function GroupsPage() {
-  const [groupsState, setGroupsState] = useState<GroupsState>({ status: 'loading' })
-  const [reloadKey, setReloadKey] = useState(0)
+  const { state, reload, update } = useApiData(fetchGroups)
 
   const [name, setName] = useState('')
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createdName, setCreatedName] = useState<string | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchGroups(controller.signal)
-      .then((groups) => setGroupsState({ status: 'ready', groups }))
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setGroupsState({ status: 'error', message: apiErrorMessage(error) })
-        }
-      })
-    return () => controller.abort()
-  }, [reloadKey])
-
-  function retry() {
-    setGroupsState({ status: 'loading' })
-    setReloadKey((key) => key + 1)
-  }
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -61,14 +40,7 @@ export function GroupsPage() {
     setCreating(true)
     try {
       const group = await createGroup({ name: trimmed })
-      setGroupsState((current) =>
-        current.status === 'ready'
-          ? {
-              status: 'ready',
-              groups: [...current.groups, group].sort((a, b) => a.name.localeCompare(b.name, 'pl')),
-            }
-          : current,
-      )
+      update((groups) => [...groups, group].sort((a, b) => a.name.localeCompare(b.name, 'pl')))
       setName('')
       setCreatedName(group.name)
     } catch (error) {
@@ -88,7 +60,7 @@ export function GroupsPage() {
       <Panel>
         <SectionTitle>Nowa grupa</SectionTitle>
         <form className="flex flex-wrap items-end gap-4" onSubmit={handleCreate} noValidate>
-          <div className="min-w-64 flex-1">
+          <div className="min-w-0 flex-[1_1_16rem]">
             <TextField
               id="group-name"
               label="Nazwa grupy"
@@ -107,30 +79,23 @@ export function GroupsPage() {
         {createdName !== null && <Alert tone="success">Utworzono grupę „{createdName}”.</Alert>}
       </Panel>
 
-      <GroupsList state={groupsState} onRetry={retry} />
+      <GroupsList state={state} onRetry={reload} />
     </div>
   )
 }
 
-function GroupsList({ state, onRetry }: { state: GroupsState; onRetry: () => void }) {
+function GroupsList({ state, onRetry }: { state: LoadState<GroupSummary[]>; onRetry: () => void }) {
   if (state.status === 'loading') {
     return <p className="text-muted">Ładowanie grup…</p>
   }
   if (state.status === 'error') {
-    return (
-      <div className="flex flex-col items-start gap-3">
-        <Alert tone="error">{state.message}</Alert>
-        <Button variant="secondary" onClick={onRetry}>
-          Spróbuj ponownie
-        </Button>
-      </div>
-    )
+    return <ErrorWithRetry message={apiErrorMessage(state.error)} onRetry={onRetry} />
   }
-  if (state.groups.length === 0) {
+  if (state.data.length === 0) {
     return <Alert tone="info">Nie masz jeszcze żadnych grup. Utwórz pierwszą powyżej.</Alert>
   }
   return (
-    <Table caption={`Grupy (${state.groups.length})`}>
+    <Table caption={`Grupy (${state.data.length})`}>
       <thead>
         <tr>
           <th scope="col">Nazwa</th>
@@ -141,11 +106,20 @@ function GroupsList({ state, onRetry }: { state: GroupsState; onRetry: () => voi
         </tr>
       </thead>
       <tbody>
-        {state.groups.map((group) => (
+        {state.data.map((group) => (
           <tr key={group.id}>
-            <td className="font-medium">{group.name}</td>
-            <td data-numeric>{group.studentCount}</td>
-            <td className="whitespace-nowrap text-muted">
+            <td>
+              <Link
+                to={`/teacher/groups/${group.id}`}
+                className="font-medium text-primary underline-offset-2 hover:underline focus-visible:underline"
+              >
+                {group.name}
+              </Link>
+            </td>
+            <td data-label="Studenci" data-numeric>
+              {group.studentCount}
+            </td>
+            <td data-label="Utworzono" className="whitespace-nowrap text-muted">
               {dateFormat.format(new Date(group.createdAt))}
             </td>
           </tr>

@@ -14,18 +14,29 @@ const BUTTON_VARIANTS = {
     'border-transparent bg-primary text-on-primary shadow-[inset_0_-2px_0_rgb(0_0_0/0.22)] enabled:hover:bg-primary-hover',
   secondary: 'border-line-strong bg-surface text-fg enabled:hover:bg-surface-muted',
   ghost: 'border-current/40 bg-transparent text-inherit enabled:hover:border-current',
+  danger:
+    'border-transparent bg-error text-on-primary shadow-[inset_0_-2px_0_rgb(0_0_0/0.22)] enabled:hover:bg-error/90',
+}
+
+const BUTTON_SIZES = {
+  md: 'min-h-10 px-4',
+  sm: 'min-h-8 px-3',
 }
 
 export function Button({
   variant = 'primary',
+  size = 'md',
   className = '',
   type = 'button',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof BUTTON_VARIANTS }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: keyof typeof BUTTON_VARIANTS
+  size?: keyof typeof BUTTON_SIZES
+}) {
   return (
     <button
       type={type}
-      className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-ui border-ui px-4 text-sm font-semibold transition-colors enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 ${FOCUS_RING} ${BUTTON_VARIANTS[variant]} ${className}`}
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-ui border-ui text-sm font-semibold transition-colors enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 ${FOCUS_RING} ${BUTTON_SIZES[size]} ${BUTTON_VARIANTS[variant]} ${className}`}
       {...props}
     />
   )
@@ -83,8 +94,9 @@ export function Alert({ tone, children }: { tone: keyof typeof ALERT_TONES; chil
 }
 
 /**
- * Scrollable, keyboard-focusable table region named by its caption.
- * Cells marked `data-numeric` are right-aligned with tabular digits.
+ * Keyboard-focusable table region named by its caption (styles: `.data-table` in global.css).
+ * In a narrow container rows turn into cards: give cells `data-label` (column name shown before
+ * the value), mark numbers with `data-numeric` and the row's buttons cell with `data-actions`.
  */
 export function Table({ caption, children }: { caption: string; children: ReactNode }) {
   const captionId = useId()
@@ -93,15 +105,10 @@ export function Table({ caption, children }: { caption: string; children: ReactN
       role="region"
       aria-labelledby={captionId}
       tabIndex={0}
-      className={`overflow-x-auto rounded-ui border-ui border-line bg-surface ${FOCUS_RING}`}
+      className={`data-table-wrap overflow-x-auto rounded-ui border-ui border-line bg-surface ${FOCUS_RING}`}
     >
-      <table className="w-full border-collapse text-sm [&_[data-numeric]]:text-right [&_[data-numeric]]:whitespace-nowrap [&_[data-numeric]]:tabular-nums [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-canvas [&_tbody_tr:last-child]:border-b-0 [&_td]:px-4 [&_td]:py-2.5 [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:whitespace-nowrap [&_th]:text-muted [&_thead]:bg-surface-muted [&_tr]:border-b [&_tr]:border-line">
-        <caption
-          id={captionId}
-          className="border-b border-line px-4 py-3 text-left font-display text-base font-semibold"
-        >
-          {caption}
-        </caption>
+      <table className="data-table">
+        <caption id={captionId}>{caption}</caption>
         {children}
       </table>
     </div>
@@ -111,9 +118,20 @@ export function Table({ caption, children }: { caption: string; children: ReactN
 export function Panel({ className = '', ...props }: HTMLAttributes<HTMLElement>) {
   return (
     <section
-      className={`flex flex-col gap-4 rounded-ui border-ui border-line bg-surface p-6 ${className}`}
+      className={`flex flex-col gap-4 rounded-ui border-ui border-line bg-surface p-4 sm:p-6 ${className}`}
       {...props}
     />
+  )
+}
+
+export function ErrorWithRetry({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <Alert tone="error">{message}</Alert>
+      <Button variant="secondary" onClick={onRetry}>
+        Spróbuj ponownie
+      </Button>
+    </div>
   )
 }
 

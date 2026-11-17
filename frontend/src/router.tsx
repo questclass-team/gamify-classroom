@@ -4,7 +4,9 @@ import { AppLayout } from './layout/AppLayout'
 import { ImportAccountsPage } from './pages/admin/ImportAccountsPage'
 import { LoginPage } from './pages/LoginPage'
 import { StudentHomePage } from './pages/student/StudentHomePage'
+import { GroupLayoutRoute } from './pages/teacher/GroupLayout'
 import { GroupsPage } from './pages/teacher/GroupsPage'
+import { GroupStudentsPage } from './pages/teacher/GroupStudentsPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -18,7 +20,17 @@ export const router = createBrowserRouter([
   {
     element: <RequireRole role="teacher" />,
     children: [
-      { element: <AppLayout />, children: [{ path: '/teacher', element: <GroupsPage /> }] },
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/teacher', element: <GroupsPage /> },
+          {
+            path: '/teacher/groups/:groupId',
+            element: <GroupLayoutRoute />,
+            children: [{ index: true, element: <GroupStudentsPage /> }],
+          },
+        ],
+      },
     ],
   },
   {

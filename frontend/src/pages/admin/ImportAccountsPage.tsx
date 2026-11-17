@@ -156,9 +156,13 @@ function ImportReportView({ fileName, report }: { fileName: string; report: User
           <tbody>
             {report.skipped.map((row) => (
               <tr key={row.line}>
-                <td className="font-mono text-muted">{row.line}</td>
-                <td className="font-mono">{row.login ?? '—'}</td>
-                <td>{SKIP_REASON_LABEL[row.reason]}</td>
+                <td data-label="Wiersz" className="font-mono text-muted">
+                  {row.line}
+                </td>
+                <td data-label="Login" className="font-mono">
+                  {row.login ?? '—'}
+                </td>
+                <td data-label="Powód">{SKIP_REASON_LABEL[row.reason]}</td>
               </tr>
             ))}
           </tbody>
@@ -178,10 +182,14 @@ function ImportReportView({ fileName, report }: { fileName: string; report: User
           <tbody>
             {report.created.map((user) => (
               <tr key={user.line}>
-                <td className="font-mono text-muted">{user.line}</td>
-                <td className="font-mono">{user.login}</td>
-                <td>{user.displayName}</td>
-                <td>{ROLE_LABEL[user.role]}</td>
+                <td data-label="Wiersz" className="font-mono text-muted">
+                  {user.line}
+                </td>
+                <td data-label="Login" className="font-mono">
+                  {user.login}
+                </td>
+                <td data-label="Imię i nazwisko">{user.displayName}</td>
+                <td data-label="Rola">{ROLE_LABEL[user.role]}</td>
               </tr>
             ))}
           </tbody>

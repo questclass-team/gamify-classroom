@@ -84,6 +84,43 @@ export interface CreateGroupRequest {
   name: string
 }
 
+/** Imported student account; also an item of GET /api/core/students?query=. */
+export interface StudentSummary {
+  id: string
+  login: string
+  displayName: string
+}
+
+export interface GroupStudent extends StudentSummary {
+  /** ISO 8601 timestamp of joining the group. */
+  addedAt: string
+}
+
+/**
+ * GET /api/core/groups/{groupId} -> GroupDetail.
+ * 404 when the group does not exist or belongs to another teacher.
+ */
+export interface GroupDetail {
+  id: string
+  name: string
+  createdAt: string
+  students: GroupStudent[]
+}
+
+/** Minimum query length for GET /api/core/students (matches login or name, max 10 results). */
+export const STUDENT_SEARCH_MIN_LENGTH = 2
+
+/**
+ * POST /api/core/groups/{groupId}/students -> GroupStudent.
+ * Idempotent: an existing member is returned unchanged (200), never duplicated.
+ * 404 when the group is not the caller's or the account is not an imported student.
+ *
+ * DELETE /api/core/groups/{groupId}/students/{studentId} -> 204 (also when not a member).
+ */
+export interface AddGroupStudentRequest {
+  studentId: string
+}
+
 /** Error body (ASP.NET Core / RFC 9457 problem details). */
 export interface ProblemDetails {
   type?: string
