@@ -1,0 +1,13 @@
+# Weekly PRs that bump the commit pins of the GitHub Actions in .github/workflows.
+# npm and NuGet are left to the frontend and core owners.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(ci)"

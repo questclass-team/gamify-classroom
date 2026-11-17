@@ -81,6 +81,16 @@ Review within **24 hours**. Be specific: point to the line, explain why, suggest
 - New logic comes with tests.
 - CI runs all of the above on every PR. A red CI blocks the merge.
 
+### CI (GitHub Actions)
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every PR to `main` and every push to `main`:
+
+- Only the areas the PR changes are checked (`frontend/`, `services/core/`, `services/game/`). A change to the workflow checks everything.
+- Every PR also gets a secret scan (gitleaks) of its new commits.
+- **`ci-ok`** sums up the run and is the only check that should be required for merging. Skipped jobs count as passed.
+- A failing job runs the same commands as the table above, so reproduce it locally with them.
+- Game service: the job starts once `services/game/pyproject.toml` exists. It needs a committed `uv.lock`, with `ruff` and `pytest` as dev dependencies.
+
 ## 7. API changes
 
 If you change an endpoint, update its OpenAPI description and `docs/api.md` **in the same PR**, and tell the frontend in the PR description.
