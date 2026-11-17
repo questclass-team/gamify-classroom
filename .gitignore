@@ -1,0 +1,123 @@
+# =============================================================================
+# QuestClass — root .gitignore
+# One file for the whole monorepo, grouped by section.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OS and editor files
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+# VS Code: ignore local settings, but keep shared extension recommendations
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# -----------------------------------------------------------------------------
+# Secrets and local configuration
+# Only .env.example (dummy values) is committed.
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+
+# -----------------------------------------------------------------------------
+# .NET (services/core)
+# -----------------------------------------------------------------------------
+bin/
+obj/
+*.user
+TestResults/
+
+# -----------------------------------------------------------------------------
+# Python (services/game)
+# -----------------------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# -----------------------------------------------------------------------------
+# Node (frontend)
+# -----------------------------------------------------------------------------
+node_modules/
+dist/
+coverage/
+*.log
+
+# -----------------------------------------------------------------------------
+# Docker volumes / local data
+# Postgres and LDAP use named Docker volumes; these folders only appear if
+# someone switches to bind mounts locally.
+# -----------------------------------------------------------------------------
+.data/
+infra/postgres/data/
+infra/ldap/data/
+
+# -----------------------------------------------------------------------------
+# Local AI assistant files — never commit
+# See CONTRIBUTING.md, "AI tools policy".
+# -----------------------------------------------------------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.cursor/
+.cursorrules
+.cursorignore
+.windsurf/
+.windsurfrules
+.codeium/
+.continue/
+.aider*
+.codex/
+AGENTS.md
+.gemini/
+GEMINI.md
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+.github/chatmodes/
+.copilot/
+.ai/
+*.prompt.md
+# Agent skills, MCP and other assistant state
+.agents/
+.omp/
+.mcp.json
+.cline/
+.clinerules
+.roo/
+.kilocode/
+.kiro/
+.junie/
+.trae/
+.opencode/
+opencode.json
+.amazonq/
+.augment/
+.qodo/
+.tabnine/
+skills-lock.json
+
+
+# .NET — Visual Studio
+.vs/
+
+# Python — Django
+db.sqlite3
+media/
+staticfiles/
+*.egg-info/
+
+# Node — Vite / TypeScript / ESLint
+*.tsbuildinfo
+.eslintcache
