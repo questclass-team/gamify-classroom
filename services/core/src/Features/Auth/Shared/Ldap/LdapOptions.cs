@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Ldap
 {
     /// <summary>
     /// Directory that checks passwords (faculty LABS domain, or the test OpenLDAP from docker compose).

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Authorization
 {
     public static class ClaimsPrincipalExtensions
     {

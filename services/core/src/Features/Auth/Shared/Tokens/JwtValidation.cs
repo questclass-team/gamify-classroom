@@ -1,7 +1,8 @@
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Tokens
 {
     /// <summary>The single definition of what makes an access token valid.</summary>
     public static class JwtValidation

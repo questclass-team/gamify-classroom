@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Ldap
 {
     /// <summary>
     /// Escaping of user input placed into LDAP strings (protection against LDAP injection).

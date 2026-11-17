@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Authorization
 {
     /// <summary>Use as <c>[Authorize(Policy = AuthPolicies.Admin)]</c> on an endpoint.</summary>
     public static class AuthPolicies

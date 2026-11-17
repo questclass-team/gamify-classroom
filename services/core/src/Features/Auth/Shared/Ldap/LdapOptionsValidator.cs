@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Ldap
 {
     public sealed class LdapOptionsValidator : IValidateOptions<LdapOptions>
     {

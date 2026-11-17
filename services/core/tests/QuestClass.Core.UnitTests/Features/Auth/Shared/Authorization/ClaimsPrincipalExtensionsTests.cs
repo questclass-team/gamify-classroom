@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
 using Shouldly;
 
-namespace QuestClass.Core.UnitTests.Features.Auth.Shared
+namespace QuestClass.Core.UnitTests.Features.Auth.Shared.Authorization
 {
     public sealed class ClaimsPrincipalExtensionsTests
     {

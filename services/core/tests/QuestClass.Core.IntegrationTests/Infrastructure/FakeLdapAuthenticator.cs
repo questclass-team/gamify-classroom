@@ -1,4 +1,4 @@
-using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Ldap;
 
 namespace QuestClass.Core.IntegrationTests.Infrastructure
 {

@@ -2,8 +2,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using QuestClass.Core.Entities;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Tokens
 {
     public sealed class JwtTokenIssuer : IJwtTokenIssuer
     {

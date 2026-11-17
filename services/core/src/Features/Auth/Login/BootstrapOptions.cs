@@ -1,6 +1,6 @@
 using QuestClass.Core.Entities;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Login
 {
     /// <summary>
     /// Solves "the first admin": accounts are created only by CSV import, which only an admin can run.

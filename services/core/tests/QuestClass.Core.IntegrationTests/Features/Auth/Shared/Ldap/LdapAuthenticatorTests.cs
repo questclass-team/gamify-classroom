@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Ldap;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using Shouldly;
 
-namespace QuestClass.Core.IntegrationTests.Features.Auth
+namespace QuestClass.Core.IntegrationTests.Features.Auth.Shared.Ldap
 {
     public sealed class LdapAuthenticatorTests : IClassFixture<LdapFixture>
     {

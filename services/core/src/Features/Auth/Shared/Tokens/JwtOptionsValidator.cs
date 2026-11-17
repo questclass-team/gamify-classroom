@@ -1,7 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Options;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Tokens
 {
     public sealed class JwtOptionsValidator : IValidateOptions<JwtOptions>
     {

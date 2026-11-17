@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Authorization
 {
     /// <summary>
     /// Claim names inside the access token. They are plain JWT names, the same ones the game service reads;

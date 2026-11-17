@@ -16,7 +16,9 @@ using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Login;
 using QuestClass.Core.Features.Auth.Me;
-using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
+using QuestClass.Core.Features.Auth.Shared.Ldap;
+using QuestClass.Core.Features.Auth.Shared.Tokens;
 using QuestClass.Core.Repositories;
 using Serilog;
 

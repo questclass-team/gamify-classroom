@@ -4,10 +4,11 @@ using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
+using QuestClass.Core.Features.Auth.Shared.Tokens;
 using Shouldly;
 
-namespace QuestClass.Core.UnitTests.Features.Auth.Shared
+namespace QuestClass.Core.UnitTests.Features.Auth.Shared.Tokens
 {
     public sealed class JwtTokenIssuerTests
     {

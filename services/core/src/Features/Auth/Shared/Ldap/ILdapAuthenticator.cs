@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Ldap
 {
     /// <summary>Checks a login and password against the faculty directory.</summary>
     public interface ILdapAuthenticator
@@ -9,7 +9,4 @@ namespace QuestClass.Core.Features.Auth.Shared
         /// </summary>
         Task<LdapUser?> AuthenticateAsync(string login, string password, CancellationToken cancellationToken = default);
     }
-
-    /// <summary>Names as stored in the directory; null when the entry has no such attribute.</summary>
-    public sealed record LdapUser(string? FirstName, string? LastName);
 }

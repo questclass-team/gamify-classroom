@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using QuestClass.Core.Common.Api;
 using QuestClass.Core.Common.Results;
 using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Authorization;
 
 namespace QuestClass.Core.Features.Auth.Me
 {

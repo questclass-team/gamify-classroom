@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using Novell.Directory.Ldap;
 
-namespace QuestClass.Core.Features.Auth.Shared
+namespace QuestClass.Core.Features.Auth.Shared.Ldap
 {
     /// <summary>
     /// Verifies the password by binding to the directory as the user, then reads the user's names.
