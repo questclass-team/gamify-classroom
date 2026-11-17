@@ -5,6 +5,18 @@ Owner: Kiryl.
 
 **Stack:** C#, .NET 10, ASP.NET Core (controllers), FluentValidation, Serilog, Swashbuckle, xUnit.
 
+## Run in Docker
+
+`docker compose up --build` from the repository root starts the whole stack with core. Swagger UI:
+http://localhost:8080/api/core/swagger (through nginx). The [`Dockerfile`](Dockerfile) has two targets:
+
+| Target | Compose service | What it is |
+|---|---|---|
+| `final` | `core` | The API on `aspnet:10.0-alpine`, non-root, health check on `/health/ready` |
+| `migrate` | `core-migrate` | SDK image that runs `dotnet ef database update` once as `core_user` and exits |
+
+After changing code, `docker compose up -d --build core` rebuilds both and applies new migrations.
+
 ## Run locally
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and Docker.

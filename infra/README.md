@@ -42,8 +42,8 @@ ldapwhoami -x -H ldap://localhost:389 -D "uid=student,ou=people,dc=labs,dc=quest
 
 ## Smoke test
 
-[`smoke-test.sh`](smoke-test.sh) checks a running stack: frontend and SPA routes, API routing, LDAP logins and
-schema permissions. CI runs it on every PR that touches infra, the frontend or core.
+[`smoke-test.sh`](smoke-test.sh) checks a running stack: frontend and SPA routes, API routing, LDAP logins,
+schema permissions, a core login through nginx and that Game accepts the core token. CI runs it on every PR that touches infra, the frontend or core.
 
 ```sh
 docker compose up --build --wait && infra/smoke-test.sh
@@ -64,9 +64,9 @@ Connect as the service's own role, e.g. for core (port and password from your `.
 ConnectionStrings__Core="Host=localhost;Port=5432;Database=questclass;Username=core_user;Password=core-dev-password"
 ```
 
-Core's migrations are applied manually: `dotnet ef database update --project src` from `services/core`.
-CI applies them the same way against the Compose database, so a migration that needs more than
-`core_user`'s rights fails there.
+When core runs outside Docker, apply its migrations manually: `dotnet ef database update --project src` from
+`services/core`. In the stack `core-migrate` applies them as `core_user`, so in CI a migration that needs more
+than `core_user`'s rights fails.
 
 ## Game service
 
@@ -84,36 +84,24 @@ The service uses `DB_HOST=postgres`, `DB_PORT=5432`, `DB_USER=game_user` and
 `GAME_DB_PASSWORD` from `.env`. Do not use the administrator `postgres` role
 from an application container.
 
-## Adding the Core service
+## Core service
 
-nginx already routes to Core. Keep `condition: service_healthy`: a plain
-`depends_on` only waits for the container to start, not for PostgreSQL to
-accept connections. Add a block like this to `docker-compose.yml`:
+Two services built from [`services/core/Dockerfile`](../services/core/Dockerfile):
 
-```yaml
-  core:
-    <<: *defaults  # restart policy, no-new-privileges, log rotation
-    build: services/core
-    environment:
-      ConnectionStrings__Core: Host=postgres;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD}
-      Ldap__Host: ldap
-      Ldap__BaseDn: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
-      Jwt__Secret: ${JWT_SECRET:?set JWT_SECRET in .env}
-    depends_on:
-      core-migrate:
-        condition: service_completed_successfully
-      ldap:
-        condition: service_healthy
-    healthcheck:
-      # /health/ready also checks the database. The .NET runtime image has no curl/wget:
-      # install one in the Dockerfile or use another probe.
-      test: ["CMD", "curl", "-fs", "http://127.0.0.1:8080/health/ready"]
+| Service | What it does |
+|---|---|
+| `core-migrate` | One-shot: waits for a healthy PostgreSQL, applies core's EF Core migrations as `core_user` and exits (`restart: "no"`) |
+| `core` | The API on port `8080` inside the network, reached through nginx at `/api/core/`. Starts after `core-migrate` succeeded and LDAP is healthy; its health check calls `/health/ready` (database reachable) |
+
+So `docker compose up --build` always brings the database schema up to date; there is no manual migration step.
+Settings are passed as environment variables (`ConnectionStrings__Core`, `Ldap__Host`, `Ldap__BaseDn`,
+`Jwt__Secret` from `JWT_SECRET`, `Bootstrap__AdminLogins` from `CORE_ADMIN_LOGINS`); the full list is in
+[`services/core/README.md`](../services/core/README.md#configuration).
+
+```sh
+docker compose up -d --build core     # rebuild and restart core after code changes (migrations included)
+docker compose logs core-migrate      # what the last migration run did
 ```
 
-Core does not apply migrations on startup, so the stack needs a one-shot `core-migrate` service (for example an
-SDK build stage running `dotnet ef database update`, or a `dotnet ef migrations bundle`) that depends on
-`postgres: condition: service_healthy` and exits when done; `core` then waits for it with
-`service_completed_successfully` as above.
-
-Other setting names are examples; use whatever the service reads. Inside Docker the hosts are `postgres:5432`
-and `ldap:389`; from your machine they are `localhost:${POSTGRES_PORT}` and `localhost:${LDAP_PORT}`.
+Inside Docker the hosts are `postgres:5432` and `ldap:389`; from your machine they are
+`localhost:${POSTGRES_PORT}` and `localhost:${LDAP_PORT}`.
