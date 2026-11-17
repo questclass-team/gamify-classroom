@@ -18,6 +18,7 @@ const SKIP_REASON_LABEL: Record<ImportSkipReason, string> = {
   already_exists: 'Konto już istnieje',
   duplicate_in_file: 'Login powtórzony w pliku',
   missing_field: 'Brak wymaganego pola',
+  invalid_login: 'Nieprawidłowy login',
   invalid_role: 'Nieznana rola',
 }
 
