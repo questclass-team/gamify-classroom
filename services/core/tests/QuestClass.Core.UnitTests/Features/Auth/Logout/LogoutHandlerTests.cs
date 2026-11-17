@@ -3,7 +3,7 @@ using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Logout;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using QuestClass.Core.Repositories;
 
 namespace QuestClass.Core.UnitTests.Features.Auth.Logout

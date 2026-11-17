@@ -6,8 +6,9 @@ using QuestClass.Core.Common.Results;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Login;
 using QuestClass.Core.Features.Auth.Shared;
+using QuestClass.Core.Features.Auth.Shared.Jwt;
 using QuestClass.Core.Features.Auth.Shared.Ldap;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using QuestClass.Core.Repositories;
 using Shouldly;
 

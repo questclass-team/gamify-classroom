@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Common.Persistence
+namespace QuestClass.Core.Common.Persistence.SoftDelete
 {
     /// <summary>
     /// Marks an entity that is never physically deleted.

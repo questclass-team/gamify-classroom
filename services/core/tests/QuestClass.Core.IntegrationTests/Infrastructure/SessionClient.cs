@@ -1,7 +1,8 @@
 using System.Net.Http.Json;
 using Microsoft.Net.Http.Headers;
 using QuestClass.Core.Features.Auth.Shared;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.Jwt;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using Shouldly;
 
 namespace QuestClass.Core.IntegrationTests.Infrastructure

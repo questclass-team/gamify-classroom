@@ -1,7 +1,7 @@
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using Shouldly;
 
-namespace QuestClass.Core.UnitTests.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.UnitTests.Features.Auth.Shared.RefreshTokens
 {
     public sealed class RefreshTokenOptionsValidatorTests
     {

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace QuestClass.Core.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.Features.Auth.Shared.RefreshTokens
 {
     public sealed class RefreshTokenOptionsValidator : IValidateOptions<RefreshTokenOptions>
     {

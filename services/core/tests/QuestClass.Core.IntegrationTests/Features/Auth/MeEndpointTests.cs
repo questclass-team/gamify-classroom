@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Shared;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.Jwt;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using QuestClass.Core.Repositories;
 using Shouldly;

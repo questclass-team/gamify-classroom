@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.Features.Auth.Shared.Jwt
 {
     /// <summary>Signed JWT sent as <c>Authorization: Bearer &lt;Token&gt;</c>.</summary>
     public sealed record AccessToken(string Token, DateTimeOffset ExpiresAt);

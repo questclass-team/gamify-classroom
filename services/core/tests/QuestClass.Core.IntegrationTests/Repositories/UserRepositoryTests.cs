@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Common.Persistence.SoftDelete;
 using QuestClass.Core.Entities;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using QuestClass.Core.Repositories;

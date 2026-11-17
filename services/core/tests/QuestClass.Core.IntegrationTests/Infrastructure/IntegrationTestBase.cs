@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.Jwt;
 using QuestClass.Core.Repositories;
 
 namespace QuestClass.Core.IntegrationTests.Infrastructure

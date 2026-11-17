@@ -1,5 +1,5 @@
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using QuestClass.Core.Repositories;
 
 namespace QuestClass.Core.Features.Auth.Logout
