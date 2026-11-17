@@ -85,6 +85,33 @@ Response `200`:
 Skip reasons: `missing_field`, `invalid_login`, `invalid_role`, `duplicate_in_file`, `already_exists`. Errors:
 `400` no file / wrong header / not UTF-8, `401`, `403` not an admin, `413` file larger than 1 MB.
 
+### Groups
+
+Teacher only (`403` for students and admins, `401` without a token). A teacher sees and changes only their own groups:
+another teacher's group answers `404`, exactly like a group that does not exist.
+
+| Endpoint | Request | Responses |
+|---|---|---|
+| `POST /api/core/groups` | `{ "name" }` — 1–100 characters after trimming, need not be unique | `201 GroupSummary` + `Location: /api/core/groups/{id}`; `400` empty or too long name |
+| `GET /api/core/groups` | — | `200 GroupSummary[]`, the caller's groups in Polish alphabetical order |
+| `GET /api/core/groups/{groupId}` | — | `200 GroupDetail`; `404` missing, deleted, another teacher's group, or an id that is not a UUID |
+
+```json
+// GroupSummary
+{ "id": "<uuid>", "name": "Algorytmy – grupa 1", "studentCount": 12, "createdAt": "2026-11-18T09:00:00+00:00" }
+
+// GroupDetail: students in Polish alphabetical order of their names
+{
+  "id": "<uuid>",
+  "name": "Algorytmy – grupa 1",
+  "createdAt": "2026-11-18T09:00:00+00:00",
+  "students": [{ "id": "<uuid>", "login": "kwojcik", "displayName": "Katarzyna Wójcik", "addedAt": "2026-11-18T10:15:00+00:00" }]
+}
+```
+
+Game checks that a group is the caller's by calling `GET /api/core/groups/{groupId}` with the caller's token: `200`
+means it is, `401`/`403`/`404` that it is not.
+
 ## Game service
 
 ### `GET /api/game/auth/me/`
@@ -178,7 +205,8 @@ http://localhost:8080/api/game/schema/
 
 ## Current scope
 
-Core issues the tokens (login, refresh, logout, `/me`) and imports accounts; Game verifies the same tokens.
+Core issues the tokens (login, refresh, logout, `/me`), imports accounts and keeps the teachers' groups; Game
+verifies the same tokens.
 Both use the same `JWT_SECRET` (Core: `Jwt__Secret`), issuer `questclass-core`, audience `questclass` and
 `HS256` — checked end to end: a token from Core is accepted by `GET /api/game/auth/me/` with the same user id
 and role.

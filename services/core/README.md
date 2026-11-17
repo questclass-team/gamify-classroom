@@ -237,4 +237,17 @@ anowak,Anna,Nowak,student
 [`infra/ldap/sample-import.csv`](../../infra/ldap/sample-import.csv) is a ready file with the test accounts of
 the local LDAP: log in as `admin` / `haslo` (bootstrap admin) and import it to get teachers and students.
 
+## Groups (`/api/core/groups`, teacher only)
+
+A teacher creates groups and sees only their own (FR-06, FR-07). Shapes and status codes: [`docs/api.md`](../../docs/api.md#groups).
+
+- `POST /api/core/groups` creates an empty group (`201`); `GET /api/core/groups` lists the caller's groups with their
+  number of students; `GET /api/core/groups/{groupId}` returns one group with its students.
+- **Another teacher's group is `404`**, the same as a missing one, so a teacher cannot even learn that it exists. The
+  game service relies on this: it calls `GET /api/core/groups/{groupId}` with the user's token to check ownership.
+- Tables: `groups` (soft-deleted like users) and `group_members`, whose key is the pair (group, student): a student
+  can be in many groups, but in one group only once. Deleted student accounts are left out of lists and counts.
+- Names (groups, students) are sorted with the Polish ICU collation `pl-x-icu` (`Collations.Polish`). The default
+  collation of the Alpine PostgreSQL image sorts by bytes and would put "algorytmy" and "Ćwiczenia" after "Zajęcia".
+
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.
