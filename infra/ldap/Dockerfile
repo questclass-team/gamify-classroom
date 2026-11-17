@@ -1,5 +1,5 @@
 # Test OpenLDAP directory standing in for the faculty LABS domain. Development only.
-FROM alpine:3.22
+FROM alpine:3.24
 
 # Not pinned: Alpine drops old package versions, so pins break the build. Dependabot bumps the base image.
 # hadolint ignore=DL3018
