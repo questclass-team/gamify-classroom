@@ -16,6 +16,7 @@ import {
   type GroupSummary,
   type LoginRequest,
   type LoginResponse,
+  type RefreshResponse,
   type ProblemDetails,
   type Role,
   type StudentSummary,
@@ -35,6 +36,9 @@ import { createMockToken, readMockBearer } from './jwt'
 import { importUsersFromCsv } from './userImport'
 
 const TOKEN_TTL_SECONDS = 60 * 60
+
+// Stands in for the HttpOnly refresh cookie of core: which user's session is open in this tab.
+const MOCK_SESSION_KEY = 'questclass.mock-session'
 
 function problem(status: number, title: string, detail: string) {
   return HttpResponse.json<ProblemDetails>(
@@ -69,10 +73,29 @@ export const handlers = [
     if (user === undefined) {
       return problem(403, 'Forbidden', 'Account has not been imported.')
     }
+    sessionStorage.setItem(MOCK_SESSION_KEY, user.id)
     return HttpResponse.json({
       accessToken: createMockToken(user.id, TOKEN_TTL_SECONDS),
       user,
     } satisfies LoginResponse)
+  }),
+
+  http.post('/api/core/auth/refresh', async () => {
+    await delay(150)
+    const userId = sessionStorage.getItem(MOCK_SESSION_KEY)
+    const user = mockUsers.find((candidate) => candidate.id === userId)
+    if (user === undefined) {
+      return problem(401, 'Auth.InvalidRefreshToken', 'The session has ended. Please log in again.')
+    }
+    return HttpResponse.json({
+      accessToken: createMockToken(user.id, TOKEN_TTL_SECONDS),
+      user,
+    } satisfies RefreshResponse)
+  }),
+
+  http.post('/api/core/auth/logout', () => {
+    sessionStorage.removeItem(MOCK_SESSION_KEY)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.get('/api/core/auth/me', ({ request }) => {
