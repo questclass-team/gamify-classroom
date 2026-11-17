@@ -38,11 +38,16 @@ Production builds never include the mocks.
 
 ## Structure
 
-- `src/api/types.ts` – all request/response types (the proposed API contract).
+- `src/api/types.ts` – all request/response types (the proposed API contract for core and game).
 - `src/api/client.ts` – `fetch` wrapper: JWT header, problem-details errors, 401 → logout.
+- `src/api/useApiData.ts` – load-on-mount hook with abort, retry and local updates.
 - `src/auth/` – session (JWT in `sessionStorage`), `AuthProvider`, role guards.
 - `src/mocks/` – MSW handlers and mock data, dev only.
-- `src/styles/global.css` – Tailwind v4 `@theme` tokens (palette, fonts, radius, shadow). The
+- `src/styles/global.css` – Tailwind v4 `@theme` tokens (palette, fonts, radius, shadow) and the
+  few component styles that are clearer as CSS (`.data-table`, breadcrumbs, `<dialog>`). The
   default Tailwind palette is disabled: use only theme colors (`bg-surface`, `text-muted`, …).
 - `src/components/ui.tsx` – shared building blocks (`Button`, `TextField`, `Alert`, `Table`,
-  `Panel`, titles); pages compose these instead of repeating long class lists.
+  `Panel`, titles); pages compose these instead of repeating long class lists. `Table` rows turn
+  into labelled cards in narrow containers (`data-label` on cells).
+- `src/pages/teacher/gameConfigValidation.ts` – currency/rank rules mirrored from the game
+  service (unique, non-negative integer thresholds), covered by tests.

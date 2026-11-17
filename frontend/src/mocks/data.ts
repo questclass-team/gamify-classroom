@@ -1,4 +1,4 @@
-import type { CurrentUser } from '../api/types'
+import type { CurrentUser, GroupGameConfig } from '../api/types'
 
 export interface MockGroup {
   id: string
@@ -61,3 +61,28 @@ export const mockGroups: MockGroup[] = [
     createdAt: '2026-10-07T12:00:00Z',
   },
 ]
+
+const COIN_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="#7a5410" d="M2 0h4v1h1v1h1v4h-1v1h-1v1h-4v-1h-1v-1h-1v-4h1v-1h1z"/><path fill="#e3b341" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1z"/><path fill="#fff1b8" d="M2 2h1v2h-1z"/><path fill="#b8862b" d="M4 2h1v4h-1z"/></svg>'
+
+/** Game service data per group id: only g-1 was configured, other groups get the defaults. */
+export const mockGameConfigs = new Map<string, GroupGameConfig>([
+  [
+    'g-1',
+    {
+      currencyName: 'Złote monety',
+      currencyIconUrl: `data:image/svg+xml,${encodeURIComponent(COIN_SVG)}`,
+      ranks: [
+        { name: 'Nowicjusz', threshold: 0 },
+        { name: 'Giermek', threshold: 100 },
+        { name: 'Rycerz', threshold: 300 },
+      ],
+    },
+  ],
+])
+
+export const DEFAULT_GAME_CONFIG: GroupGameConfig = {
+  currencyName: 'Punkty',
+  currencyIconUrl: null,
+  ranks: [],
+}

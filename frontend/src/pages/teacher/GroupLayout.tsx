@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Link, Outlet, useParams } from 'react-router'
+import { Link, NavLink, Outlet, useParams } from 'react-router'
 import { ApiError } from '../../api/client'
 import { apiErrorMessage } from '../../api/errorMessage'
 import { fetchGroup } from '../../api/groups'
@@ -60,11 +60,30 @@ function GroupLayout({ groupId }: { groupId: string }) {
             title={state.data.name}
             description={`Studenci: ${state.data.students.length} · utworzona ${dateFormat.format(new Date(state.data.createdAt))}`}
           />
+          <nav aria-label="Sekcje grupy" className="-mt-2 flex gap-1 border-b border-line">
+            <GroupTab to={`/teacher/groups/${groupId}`} end>
+              Studenci
+            </GroupTab>
+            <GroupTab to={`/teacher/groups/${groupId}/config`}>Punkty i rangi</GroupTab>
+          </nav>
           <Outlet
             context={{ group: state.data, updateGroup: update } satisfies GroupOutletContext}
           />
         </>
       )}
     </div>
+  )
+}
+
+/** Section link; NavLink sets aria-current="page" on the active one. */
+function GroupTab({ to, end, children }: { to: string; end?: boolean; children: string }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-focus aria-[current=page]:border-accent aria-[current=page]:text-fg"
+    >
+      {children}
+    </NavLink>
   )
 }
