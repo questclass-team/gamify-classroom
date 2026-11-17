@@ -26,6 +26,9 @@ builder.Services.Configure<HostOptions>(options =>
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
+
+    // Request rules live only in FluentValidation validators, not in implicit [Required].
+    options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
 });
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 

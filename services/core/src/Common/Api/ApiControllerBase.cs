@@ -4,7 +4,6 @@ using QuestClass.Core.Common.Results;
 namespace QuestClass.Core.Common.Api
 {
     [ApiController]
-    [Produces("application/json")]
     public abstract class ApiControllerBase : ControllerBase
     {
         protected ObjectResult HandleFailure(Result result)

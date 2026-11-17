@@ -2,4 +2,8 @@
   <Folder Name="/src/">
     <Project Path="src/QuestClass.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QuestClass.Core.IntegrationTests/QuestClass.Core.IntegrationTests.csproj" />
+    <Project Path="tests/QuestClass.Core.UnitTests/QuestClass.Core.UnitTests.csproj" />
+  </Folder>
 </Solution>
