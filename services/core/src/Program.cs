@@ -21,6 +21,9 @@ using QuestClass.Core.Features.Auth.Refresh;
 using QuestClass.Core.Features.Auth.Shared.Authorization;
 using QuestClass.Core.Features.Auth.Shared.Ldap;
 using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Groups.Create;
+using QuestClass.Core.Features.Groups.GetById;
+using QuestClass.Core.Features.Groups.List;
 using QuestClass.Core.Features.Users.Import;
 using QuestClass.Core.Repositories;
 using Serilog;
@@ -188,6 +191,11 @@ builder.Services.AddScoped<LogoutHandler>();
 
 // Users feature
 builder.Services.AddScoped<ImportUsersHandler>();
+
+// Groups feature
+builder.Services.AddScoped<CreateGroupHandler>();
+builder.Services.AddScoped<ListGroupsHandler>();
+builder.Services.AddScoped<GetGroupHandler>();
 
 // Rate Limiting
 builder.Services
