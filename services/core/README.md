@@ -47,7 +47,10 @@ dotnet format --verify-no-changes          # code style check (the same one CI r
 dotnet format                              # fix code style
 ```
 
-Integration tests start the whole API in memory with `WebApplicationFactory`; nothing else has to run.
+Integration tests need **Docker running**. They start a throwaway PostgreSQL container
+(Testcontainers), apply the real migrations to it and run the whole API in memory with
+`WebApplicationFactory`. Tables are emptied before every test (Respawn), and the container is removed
+after the run. The local `questclass-postgres` database is never touched by tests.
 
 ## Database migrations
 
