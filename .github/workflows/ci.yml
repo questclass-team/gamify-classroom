@@ -108,7 +108,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.x
+          global-json-file: services/core/global.json # .NET 10 SDK; the runner also has 11, which dotnet would pick otherwise
       - run: dotnet restore
       - run: dotnet tool restore
       - run: dotnet format --verify-no-changes --no-restore
@@ -178,7 +178,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.x
+          global-json-file: services/core/global.json # .NET 10 SDK; the runner also has 11, which dotnet would pick otherwise
       - run: cp .env.example .env
       - run: docker compose up --build --wait --wait-timeout 300
       - run: infra/smoke-test.sh
@@ -187,6 +187,7 @@ jobs:
         working-directory: services/core
         run: |
           set -a; . ../../.env; set +a
+          dotnet restore
           dotnet tool restore
           export ConnectionStrings__Core="Host=127.0.0.1;Port=$POSTGRES_PORT;Database=$POSTGRES_DB;Username=core_user;Password=$CORE_DB_PASSWORD"
           dotnet ef database update --project src
