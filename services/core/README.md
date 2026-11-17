@@ -147,5 +147,17 @@ a required setting is missing or invalid.
 | `Ldap__UserFilterTemplate` | no (`(uid={login})`) | `(sAMAccountName={login})` (Active Directory) |
 | `Ldap__FirstNameAttribute` / `Ldap__LastNameAttribute` | no (`givenName` / `sn`) | |
 | `Ldap__TimeoutSeconds` | no (5) | |
+| `Jwt__Secret` | yes, at least 32 bytes, **shared with the game service** | a long random string |
+| `Jwt__Issuer` / `Jwt__Audience` | no (`questclass-core` / `questclass`), shared with the game service | |
+| `Jwt__AccessTokenLifetimeMinutes` | no (15), at most 480 | |
+
+## Authentication
+
+- Every endpoint requires a valid access token (`Authorization: Bearer <token>`) unless it is marked
+  `[AllowAnonymous]`. Role checks: `[Authorize(Policy = AuthPolicies.Admin)]` (also `Teacher`, `Student`).
+- Access tokens are HS256 JWTs. Claims: `sub` (user id), `login`, `name`, `role` (`student` / `teacher` /
+  `admin`), `jti`, plus `iss`, `aud`, `iat`, `nbf`, `exp`. The game service validates them with the same
+  secret, issuer and audience.
+- In Swagger UI use the **Authorize** button and paste the `accessToken` returned by the login endpoint.
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.

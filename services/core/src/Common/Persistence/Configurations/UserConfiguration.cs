@@ -45,7 +45,7 @@ namespace QuestClass.Core.Common.Persistence.Configurations
             // Stored as "student" / "teacher" / "admin", the same values the API uses.
             builder.Property(user => user.Role)
                 .HasConversion(
-                    role => role.ToString().ToLowerInvariant(),
+                    role => role.ToApiName(),
                     value => Enum.Parse<Role>(value, true))
                 .HasMaxLength(16)
                 .IsRequired();

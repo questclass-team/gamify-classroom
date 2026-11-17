@@ -1,6 +1,8 @@
 using System.Reflection;
 using FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -8,6 +10,7 @@ using Microsoft.OpenApi;
 using QuestClass.Core.Common.Api;
 using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.Repositories;
 using Serilog;
@@ -52,6 +55,16 @@ builder.Services.AddSwaggerGen(options =>
         AppContext.BaseDirectory,
         $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
     options.IncludeXmlComments(xmlDocumentPath);
+
+    // "Authorize" button: paste the accessToken from POST /api/core/auth/login.
+    options.AddSecurityDefinition(AuthorizeOperationFilter.SchemeName, new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Access token from POST /api/core/auth/login."
+    });
+    options.OperationFilter<AuthorizeOperationFilter>();
 });
 builder.Services.AddFluentValidationRulesToSwagger();
 
@@ -107,6 +120,38 @@ builder.Services
 builder.Services.AddSingleton<IValidateOptions<LdapOptions>, LdapOptionsValidator>();
 builder.Services.AddSingleton<ILdapAuthenticator, LdapAuthenticator>();
 
+// Authentication (JWT)
+builder.Services
+    .AddOptions<JwtOptions>()
+    .BindConfiguration(JwtOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
+builder.Services.AddSingleton<IJwtTokenIssuer, JwtTokenIssuer>();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Keep "sub", "role", "name" exactly as in the token instead of long .NET claim type URIs.
+        options.MapInboundClaims = false;
+    });
+
+builder.Services
+    .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((bearerOptions, jwtOptions) =>
+    {
+        bearerOptions.TokenValidationParameters = JwtValidation.CreateParameters(jwtOptions.Value);
+    });
+
+// Authorization
+builder.Services.AddAuthorizationBuilder()
+    // Secure by default: every endpoint needs a valid token unless it is marked [AllowAnonymous].
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
+    .AddPolicy(AuthPolicies.Admin, policy => policy.RequireRole(Role.Admin.ToApiName()))
+    .AddPolicy(AuthPolicies.Teacher, policy => policy.RequireRole(Role.Teacher.ToApiName()))
+    .AddPolicy(AuthPolicies.Student, policy => policy.RequireRole(Role.Student.ToApiName()));
+
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -138,18 +183,17 @@ app.UseSwaggerUI(options =>
     options.DocumentTitle = "QuestClass Core API";
 });
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
-// Liveness: the process is up. Readiness: the database is reachable.
-app.MapHealthChecks("/health/live", new HealthCheckOptions
-{
-    Predicate = _ => false
-});
+// Liveness: the process is up. Readiness: the database is reachable. Docker probes them without a token.
+var livenessCheck = new HealthCheckOptions { Predicate = _ => false };
+var readinessCheck = new HealthCheckOptions { Predicate = healthCheck => healthCheck.Tags.Contains("ready") };
 
-app.MapHealthChecks("/health/ready", new HealthCheckOptions
-{
-    Predicate = healthCheck => healthCheck.Tags.Contains("ready")
-});
+app.MapHealthChecks("/health/live", livenessCheck).AllowAnonymous();
+app.MapHealthChecks("/health/ready", readinessCheck).AllowAnonymous();
 
 app.Run();
 
