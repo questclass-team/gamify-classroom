@@ -21,6 +21,7 @@ using QuestClass.Core.Features.Auth.Refresh;
 using QuestClass.Core.Features.Auth.Shared.Authorization;
 using QuestClass.Core.Features.Auth.Shared.Ldap;
 using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Users.Import;
 using QuestClass.Core.Repositories;
 using Serilog;
 
@@ -184,6 +185,9 @@ builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<GetCurrentUserHandler>();
 builder.Services.AddScoped<RefreshHandler>();
 builder.Services.AddScoped<LogoutHandler>();
+
+// Users feature
+builder.Services.AddScoped<ImportUsersHandler>();
 
 // Rate Limiting
 builder.Services
