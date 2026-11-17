@@ -18,5 +18,8 @@ namespace QuestClass.Core.Common.Results
 
         public static Error Conflict(string code, string message) =>
             new(code, message, ErrorType.Conflict);
+
+        public static Error TooLarge(string code, string message) =>
+            new(code, message, ErrorType.TooLarge);
     }
 }

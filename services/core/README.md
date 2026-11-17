@@ -109,6 +109,7 @@ The service uses **vertical slices**: everything one endpoint needs lives in its
   | `Forbidden` | 403 |
   | `NotFound` | 404 |
   | `Conflict` | 409 |
+  | `TooLarge` | 413 |
 
 - **Request validation** lives only in FluentValidation validators. They are picked up automatically and
   run before the endpoint by `ValidationFilter`.
