@@ -128,13 +128,7 @@ namespace QuestClass.Core.Features.Auth.Login
 
         private static LoginResponse ToResponse(User user, AccessToken accessToken)
         {
-            return new LoginResponse(
-                accessToken.Token,
-                new CurrentUserResponse(
-                    user.Id,
-                    user.Login,
-                    $"{user.FirstName} {user.LastName}".Trim(),
-                    user.Role.ToApiName()));
+            return new LoginResponse(accessToken.Token, user.ToCurrentUserResponse());
         }
     }
 }

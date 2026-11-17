@@ -15,6 +15,17 @@ namespace QuestClass.Core.Features.Auth.Shared
                 "Invalid login or password.");
         }
 
+        /// <summary>
+        /// The token is valid, but its user no longer exists (e.g. deleted after login): the session is over.
+        /// 401, so the frontend logs the user out.
+        /// </summary>
+        public static Error SessionUserNotFound()
+        {
+            return Error.Unauthorized(
+                "Auth.SessionUserNotFound",
+                "The account of this session no longer exists. Please log in again.");
+        }
+
         /// <summary>The directory accepted the password, but the account was never imported from CSV.</summary>
         public static Error AccountNotImported()
         {

@@ -15,6 +15,7 @@ using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Login;
+using QuestClass.Core.Features.Auth.Me;
 using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.Repositories;
 using Serilog;
@@ -163,12 +164,13 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AuthPolicies.Teacher, policy => policy.RequireRole(Role.Teacher.ToApiName()))
     .AddPolicy(AuthPolicies.Student, policy => policy.RequireRole(Role.Student.ToApiName()));
 
-// Login
+// Auth feature
 builder.Services
     .AddOptions<BootstrapOptions>()
     .BindConfiguration(BootstrapOptions.SectionName);
 
 builder.Services.AddScoped<LoginHandler>();
+builder.Services.AddScoped<GetCurrentUserHandler>();
 
 // Rate Limiting
 builder.Services
