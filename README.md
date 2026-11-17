@@ -131,6 +131,9 @@ cp .env.example .env
 > [!CAUTION]
 > Never commit `.env`, passwords, keys or real student data. Use only the dummy values from `.env.example` for development.
 
+Core and Game share the `JWT_SECRET` environment variable. It is used by Core
+to issue HS256 access tokens and by Game to validate them.
+
 ## 2. Run the stack
 
 ```sh

@@ -45,10 +45,12 @@ def test_missing_token_returns_401(api_client) -> None:
 def test_invalid_signature_returns_401(
     api_client,
     token_factory,
-    another_private_key,
 ) -> None:
     token = token_factory(
-        signing_key=another_private_key,
+        signing_key=(
+            "different-test-secret-that-is-not-the-core-secret-"
+            "and-is-long-enough-for-hs384"
+        ),
     )
 
     response = api_client.get(
@@ -60,7 +62,7 @@ def test_invalid_signature_returns_401(
 
 
 def test_expired_token_returns_401(api_client, token_factory) -> None:
-    token = token_factory(expires_in=-10)
+    token = token_factory(expires_in=-60)
 
     response = api_client.get(
         reverse("game:auth-me"),
@@ -105,9 +107,10 @@ def test_invalid_audience_returns_401(api_client, token_factory) -> None:
     assert response.status_code == 401
 
 
-def test_refresh_token_returns_401(api_client, token_factory) -> None:
+def test_wrong_algorithm_returns_401(api_client, token_factory) -> None:
     token = token_factory(
-        token_type="refresh",
+        algorithm="HS384",
+        signing_key="algorithm-test-secret-that-is-long-enough-for-hs384",
     )
 
     response = api_client.get(

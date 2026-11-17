@@ -98,6 +98,7 @@ accept connections. Add a block like this to `docker-compose.yml`:
       ConnectionStrings__Core: Host=postgres;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD}
       Ldap__Host: ldap
       Ldap__BaseDn: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
+      Jwt__Secret: ${JWT_SECRET:?set JWT_SECRET in .env}
     depends_on:
       core-migrate:
         condition: service_completed_successfully

@@ -39,12 +39,14 @@ Compose container.
 ## JWT authentication
 
 Game validates access tokens issued by Core. It does not issue or refresh
-tokens. Tokens must use `RS256`, contain the `questclass-core` issuer and the
-`questclass-api` audience, and include `sub`, `role`, `iat`, `exp`, `jti` and
-`token_type=access` claims.
+tokens. Tokens use `HS256`, the `questclass-core` issuer and the `questclass`
+audience, and include `sub`, `login`, `name`, `role`, `iat`, `nbf`, `exp` and
+`jti` claims.
 
-The RSA public key is read from `JWT_VERIFYING_KEY_PATH` (by default
-`local-keys/jwt-public.pem`). Never commit the private key or `.env`.
+Core and Game must receive the same `JWT_SECRET` value. In Docker, Core maps
+this value to `Jwt__Secret`, while Game uses it as the SimpleJWT signing key.
+Use a random secret of at least 32 bytes outside local development and never
+commit it or `.env`.
 
 See the complete endpoint and JWT contract in [`docs/api.md`](../../docs/api.md).
 

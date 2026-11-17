@@ -21,19 +21,21 @@ verification contract is:
 
 | JWT field | Required value / meaning |
 |---|---|
-| `alg` | `RS256` |
+| `alg` | `HS256` |
 | `iss` | `questclass-core` |
-| `aud` | `questclass-api` |
+| `aud` | `questclass` |
 | `sub` | User identifier |
+| `login` | LDAP login |
+| `name` | Display name |
 | `role` | `student`, `teacher` or `admin` |
 | `iat` | Issued-at timestamp |
+| `nbf` | Not-before timestamp |
 | `exp` | Expiration timestamp |
 | `jti` | Token identifier |
-| `token_type` | `access` |
 
-Game verifies the signature with the RSA public key configured by
-`JWT_VERIFYING_KEY_PATH`. The private signing key must remain in Core and must
-never be committed to the repository.
+Core signs the token with the shared `Jwt__Secret` value. Game receives the
+same value as `JWT_SECRET`. The secret must never be committed to the
+repository.
 
 ## Game service
 
@@ -90,5 +92,7 @@ http://localhost:8080/api/game/schema/
 
 ## Current scope
 
-Core login, LDAP authentication and JWT issuing are not implemented yet. Until
-Core provides the issuer and signing key, Game tests use local RSA test keys.
+Core login, LDAP authentication and JWT issuing are implemented on the
+`feature/SCRUM-7-ldap-login` branch. The Core and Game branches must use the
+same `JWT_SECRET`, issuer, audience and `HS256` algorithm before they are
+connected end to end.

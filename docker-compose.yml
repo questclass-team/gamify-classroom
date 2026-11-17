@@ -64,7 +64,7 @@ services:
       DB_PASSWORD: ${GAME_DB_PASSWORD:?set GAME_DB_PASSWORD in .env}
       DB_HOST: postgres
       DB_PORT: "5432"
-      JWT_VERIFYING_KEY_PATH: /app/local-keys/jwt-public.pem
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
     depends_on:
       postgres:
         condition: service_healthy

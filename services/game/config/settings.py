@@ -145,17 +145,10 @@ MAILERS = {
     },
 }
 
-JWT_VERIFYING_KEY_PATH = os.environ.get(
-    "JWT_VERIFYING_KEY_PATH",
-    str(BASE_DIR / "local-keys" / "jwt-public.pem"),
+JWT_SIGNING_KEY = os.environ.get(
+    "JWT_SECRET",
+    "local-development-secret-not-for-production-use",
 )
-
-jwt_key_path = Path(JWT_VERIFYING_KEY_PATH)
-
-if jwt_key_path.exists():
-    JWT_VERIFYING_KEY = jwt_key_path.read_text(encoding="utf-8")
-else:
-    JWT_VERIFYING_KEY = ""
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -166,12 +159,14 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ALGORITHM": "RS256",
-    "VERIFYING_KEY": JWT_VERIFYING_KEY,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": JWT_SIGNING_KEY,
     "ISSUER": "questclass-core",
-    "AUDIENCE": "questclass-api",
+    "AUDIENCE": "questclass",
     "USER_ID_CLAIM": "sub",
-    "TOKEN_TYPE_CLAIM": "token_type",
+    # Core issues access tokens without SimpleJWT's token_type claim.
+    "TOKEN_TYPE_CLAIM": None,
+    "LEEWAY": 30,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 

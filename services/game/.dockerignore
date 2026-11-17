@@ -3,4 +3,3 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 db.sqlite3
-local-keys/jwt-private.pem
