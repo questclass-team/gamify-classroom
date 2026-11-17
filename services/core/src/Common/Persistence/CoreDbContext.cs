@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using QuestClass.Core.Common.Persistence.SoftDelete;
 using QuestClass.Core.Entities;
 
 namespace QuestClass.Core.Common.Persistence

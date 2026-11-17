@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Common.Persistence.SoftDelete;
 using QuestClass.Core.Entities;
 
 namespace QuestClass.Core.Repositories

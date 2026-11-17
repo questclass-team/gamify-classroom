@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace QuestClass.Core.Common.Persistence
+namespace QuestClass.Core.Common.Persistence.SoftDelete
 {
     /// <summary>
     /// Turns <c>Remove(entity)</c> of an <see cref="ISoftDeletable"/> into an UPDATE of

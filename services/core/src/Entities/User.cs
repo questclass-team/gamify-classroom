@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Common.Persistence.SoftDelete;
 
 namespace QuestClass.Core.Entities
 {
