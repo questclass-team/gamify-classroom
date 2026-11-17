@@ -95,6 +95,12 @@ another teacher's group answers `404`, exactly like a group that does not exist.
 | `POST /api/core/groups` | `{ "name" }` — 1–100 characters after trimming, need not be unique | `201 GroupSummary` + `Location: /api/core/groups/{id}`; `400` empty or too long name |
 | `GET /api/core/groups` | — | `200 GroupSummary[]`, the caller's groups in Polish alphabetical order |
 | `GET /api/core/groups/{groupId}` | — | `200 GroupDetail`; `404` missing, deleted, another teacher's group, or an id that is not a UUID |
+| `POST /api/core/groups/{groupId}/students` | `{ "studentId" }` | `201 GroupStudent` added; `200 GroupStudent` already in the group (nothing changes, never a duplicate); `400` no `studentId`; `404` group not the caller's (`Groups.NotFound`) or the id is not an existing student account (`Groups.StudentNotFound`) |
+| `DELETE /api/core/groups/{groupId}/students/{studentId}` | — | `204`, also when the student was not in the group; `404` group not the caller's. The account and other groups are not touched |
+| `GET /api/core/students?query=` | part of a login or of "First Last" | `200 StudentSummary[]`: student accounts only, letter case and Polish diacritics ignored (`wojcik` finds "Wójcik"), alphabetical, at most 10; empty for a query shorter than 2 characters; `400` query longer than 100 characters |
+
+A student can be in many groups. Students already in a group are still returned by the search; the frontend marks
+them.
 
 ```json
 // GroupSummary
@@ -107,6 +113,9 @@ another teacher's group answers `404`, exactly like a group that does not exist.
   "createdAt": "2026-11-18T09:00:00+00:00",
   "students": [{ "id": "<uuid>", "login": "kwojcik", "displayName": "Katarzyna Wójcik", "addedAt": "2026-11-18T10:15:00+00:00" }]
 }
+
+// GroupStudent: one item of GroupDetail.students
+// StudentSummary: { "id": "<uuid>", "login": "kwojcik", "displayName": "Katarzyna Wójcik" }
 ```
 
 Game checks that a group is the caller's by calling `GET /api/core/groups/{groupId}` with the caller's token: `200`

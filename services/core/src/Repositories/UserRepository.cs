@@ -6,6 +6,8 @@ namespace QuestClass.Core.Repositories
 {
     public sealed class UserRepository : IUserRepository
     {
+        private const string LikeEscape = "\\";
+
         private readonly CoreDbContext _dbContext;
 
         public UserRepository(CoreDbContext dbContext)
@@ -25,6 +27,25 @@ namespace QuestClass.Core.Repositories
 
             return _dbContext.Users
                 .SingleOrDefaultAsync(user => user.Login == normalizedLogin, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<User>> SearchStudentsAsync(
+            string query,
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            // % and _ typed by the user are matched literally, not as wildcards.
+            var pattern = $"%{EscapeLikePattern(SearchText.Fold(query.Trim()))}%";
+
+            return await _dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Role == Role.Student)
+                .Where(user => EF.Functions.Like(EF.Property<string>(user, SearchText.PropertyName), pattern, LikeEscape))
+                .OrderBy(user => EF.Functions.Collate(user.FirstName, Collations.Polish))
+                .ThenBy(user => EF.Functions.Collate(user.LastName, Collations.Polish))
+                .ThenBy(user => user.Login)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
         }
 
         public Task<bool> ExistsIncludingDeletedAsync(string login, CancellationToken cancellationToken = default)
@@ -78,6 +99,14 @@ namespace QuestClass.Core.Repositories
             _dbContext.Users.Remove(user);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        private static string EscapeLikePattern(string value)
+        {
+            return value
+                .Replace(LikeEscape, LikeEscape + LikeEscape)
+                .Replace("%", LikeEscape + "%")
+                .Replace("_", LikeEscape + "_");
         }
     }
 }

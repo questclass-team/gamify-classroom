@@ -10,6 +10,12 @@ namespace QuestClass.Core.Repositories
         /// <summary>Returns the account by login in any letter case, or null when it does not exist or is soft-deleted.</summary>
         Task<User?> GetByLoginAsync(string login, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Student accounts whose login or "First Last" contains <paramref name="query"/>, ignoring letter case and
+        /// Polish diacritics, in Polish alphabetical order of their names; at most <paramref name="limit"/>.
+        /// </summary>
+        Task<IReadOnlyList<User>> SearchStudentsAsync(string query, int limit, CancellationToken cancellationToken = default);
+
         /// <summary>True when the login was ever used, including soft-deleted accounts.</summary>
         Task<bool> ExistsIncludingDeletedAsync(string login, CancellationToken cancellationToken = default);
 

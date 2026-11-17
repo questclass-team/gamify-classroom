@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 
@@ -60,6 +61,41 @@ namespace QuestClass.Core.Repositories
                     select new GroupStudent(user, member.AddedAt))
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+        }
+
+        public Task<GroupMember?> GetMemberAsync(Guid groupId, Guid studentId, CancellationToken cancellationToken = default)
+        {
+            return _dbContext.GroupMembers
+                .AsNoTracking()
+                .SingleOrDefaultAsync(
+                    member => member.GroupId == groupId && member.StudentId == studentId,
+                    cancellationToken);
+        }
+
+        public async Task<bool> TryAddMemberAsync(GroupMember member, CancellationToken cancellationToken = default)
+        {
+            _dbContext.GroupMembers.Add(member);
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+            catch (DbUpdateException exception)
+                when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                // Two requests added the same student at once: the primary key let only one of them in.
+                _dbContext.Entry(member).State = EntityState.Detached;
+                return false;
+            }
+        }
+
+        public Task RemoveMemberAsync(Guid groupId, Guid studentId, CancellationToken cancellationToken = default)
+        {
+            // GroupMember is not soft-deletable, so a bulk delete is fine here.
+            return _dbContext.GroupMembers
+                .Where(member => member.GroupId == groupId && member.StudentId == studentId)
+                .ExecuteDeleteAsync(cancellationToken);
         }
     }
 }
