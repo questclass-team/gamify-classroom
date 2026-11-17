@@ -10,7 +10,7 @@ namespace QuestClass.Core.Features.Auth.Shared
             return new CurrentUserResponse(
                 user.Id,
                 user.Login,
-                $"{user.FirstName} {user.LastName}".Trim(),
+                user.DisplayName,
                 user.Role.ToApiName());
         }
     }

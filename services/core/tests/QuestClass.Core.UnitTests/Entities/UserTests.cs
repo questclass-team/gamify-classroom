@@ -67,5 +67,22 @@ namespace QuestClass.Core.UnitTests.Entities
             user.DeletedAt.ShouldBeNull();
             user.Id.ShouldNotBe(Guid.Empty);
         }
+
+        [Theory]
+        [InlineData("Jan", "Kowalski", "Jan Kowalski")]
+        [InlineData("Jan", "", "Jan")]
+        [InlineData("", "Kowalski", "Kowalski")]
+        public void DisplayName_ShouldBeFirstAndLastNameWithoutStraySpaces(string firstName, string lastName, string expected)
+        {
+            var user = new User
+            {
+                Login = "jkowalski",
+                FirstName = firstName,
+                LastName = lastName,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            user.DisplayName.ShouldBe(expected);
+        }
     }
 }
