@@ -15,6 +15,7 @@ using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Login;
+using QuestClass.Core.Features.Auth.Logout;
 using QuestClass.Core.Features.Auth.Me;
 using QuestClass.Core.Features.Auth.Refresh;
 using QuestClass.Core.Features.Auth.Shared.Authorization;
@@ -182,6 +183,7 @@ builder.Services
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<GetCurrentUserHandler>();
 builder.Services.AddScoped<RefreshHandler>();
+builder.Services.AddScoped<LogoutHandler>();
 
 // Rate Limiting
 builder.Services
