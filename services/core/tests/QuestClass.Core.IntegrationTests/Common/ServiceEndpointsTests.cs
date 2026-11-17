@@ -43,6 +43,20 @@ namespace QuestClass.Core.IntegrationTests.Common
         }
 
         [Fact]
+        public async Task OpenApiDocument_ShouldDescribeBearerTokenAuthentication()
+        {
+            var response = await Client.GetAsync("/api/core/swagger/v1/swagger.json");
+
+            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            var scheme = document.RootElement
+                .GetProperty("components")
+                .GetProperty("securitySchemes")
+                .GetProperty("Bearer");
+            scheme.GetProperty("type").GetString().ShouldBe("http");
+            scheme.GetProperty("scheme").GetString().ShouldBe("bearer");
+        }
+
+        [Fact]
         public async Task SwaggerUi_ShouldBeServedUnderCorePrefix()
         {
             var response = await Client.GetAsync("/api/core/swagger/index.html");

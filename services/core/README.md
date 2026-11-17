@@ -19,14 +19,22 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) an
 
    Later just `docker start questclass-postgres`.
 
-2. Create or update the database tables (migrations are never applied automatically on startup):
+2. Start the test LDAP directory (from the repository root; it is the `ldap` service of the shared
+   `docker-compose.yml`, test accounts in `infra/ldap/*.csv`, every password `haslo`):
+
+   ```sh
+   cp .env.example .env
+   docker compose up -d ldap
+   ```
+
+3. Create or update the database tables (migrations are never applied automatically on startup):
 
    ```sh
    dotnet tool restore
    dotnet ef database update --project src
    ```
 
-3. Run the API from `services/core`:
+4. Run the API from `services/core`:
 
    ```sh
    dotnet run --project src
@@ -130,6 +138,42 @@ a required setting is missing or invalid.
 
 | Environment variable | Required | Example |
 |---|---|---|
-| `ConnectionStrings__Core` | yes | `Host=postgres;Port=5432;Database=questclass;Username=questclass;Password=...` |
+| `ConnectionStrings__Core` | yes | `Host=postgres;Port=5432;Database=questclass;Username=core_user;Password=...` |
+| `Ldap__Host` | yes | `ldap` |
+| `Ldap__Port` | no (389) | `636` |
+| `Ldap__UseSsl` | no (false) | `true` — use LDAPS for a real directory, the password travels to it |
+| `Ldap__BaseDn` | yes | `dc=labs,dc=questclass,dc=test` |
+| `Ldap__BindTemplate` | no (`uid={login},ou=people,{baseDn}`) | `{login}@labs.example` (Active Directory UPN) |
+| `Ldap__UserFilterTemplate` | no (`(uid={login})`) | `(sAMAccountName={login})` (Active Directory) |
+| `Ldap__FirstNameAttribute` / `Ldap__LastNameAttribute` | no (`givenName` / `sn`) | |
+| `Ldap__TimeoutSeconds` | no (5) | |
+| `Jwt__Secret` | yes, at least 32 bytes, **shared with the game service** | a long random string |
+| `Jwt__Issuer` / `Jwt__Audience` | no (`questclass-core` / `questclass`), shared with the game service | |
+| `Jwt__AccessTokenLifetimeMinutes` | no (15), at most 480 | |
+| `Bootstrap__AdminLogins` | no (none) | `admin` — comma-separated logins that become admins on their first login |
+| `RateLimiting__LoginPermitsPerMinute` | no (20) | login attempts per client IP per minute |
+
+## Authentication
+
+- Every endpoint requires a valid access token (`Authorization: Bearer <token>`) unless it is marked
+  `[AllowAnonymous]`. Role checks: `[Authorize(Policy = AuthPolicies.Admin)]` (also `Teacher`, `Student`).
+- Access tokens are HS256 JWTs. Claims: `sub` (user id), `login`, `name`, `role` (`student` / `teacher` /
+  `admin`), `jti`, plus `iss`, `aud`, `iat`, `nbf`, `exp`. The game service validates them with the same
+  secret, issuer and audience.
+- In Swagger UI use the **Authorize** button and paste the `accessToken` returned by the login endpoint.
+
+### Login (`POST /api/core/auth/login`)
+
+1. The LDAP directory checks the password (it is never stored). Wrong password or unknown login → `401`.
+2. Only accounts imported from CSV may log in. Valid in LDAP but not imported → `403`.
+3. First and last name are refreshed from LDAP on every login; the role always comes from the database.
+4. Returns `{ accessToken, user: { id, login, displayName, role } }`.
+
+**First admin.** Accounts are created only by CSV import, which needs an admin. A login listed in
+`Bootstrap__AdminLogins` that passes LDAP and has never existed in the database is created as an admin on
+its first login (locally: `admin` / `haslo`). A deleted account is never recreated this way.
+
+**Rate limit.** Login attempts are limited per client IP (`429` when exceeded). Behind nginx the client IP
+is taken from `X-Forwarded-For`.
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.

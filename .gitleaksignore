@@ -1,0 +1,6 @@
+# Reviewed false positives of the CI secret scan (gitleaks). One fingerprint per line, from the scan log.
+# Add a line only for a value that is not a real secret, with a comment explaining why.
+
+# Test-only JWT key of the core integration tests, never used outside them; the literal was replaced by a
+# random value per test run in a later commit.
+d51870f713968f5521446c10e3376104d238b37e:services/core/tests/QuestClass.Core.IntegrationTests/Infrastructure/CoreApiFactory.cs:generic-api-key:8
