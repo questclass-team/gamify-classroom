@@ -150,6 +150,8 @@ a required setting is missing or invalid.
 | `Jwt__Secret` | yes, at least 32 bytes, **shared with the game service** | a long random string |
 | `Jwt__Issuer` / `Jwt__Audience` | no (`questclass-core` / `questclass`), shared with the game service | |
 | `Jwt__AccessTokenLifetimeMinutes` | no (15), at most 480 | |
+| `Bootstrap__AdminLogins` | no (none) | `admin` — comma-separated logins that become admins on their first login |
+| `RateLimiting__LoginPermitsPerMinute` | no (20) | login attempts per client IP per minute |
 
 ## Authentication
 
@@ -159,5 +161,19 @@ a required setting is missing or invalid.
   `admin`), `jti`, plus `iss`, `aud`, `iat`, `nbf`, `exp`. The game service validates them with the same
   secret, issuer and audience.
 - In Swagger UI use the **Authorize** button and paste the `accessToken` returned by the login endpoint.
+
+### Login (`POST /api/core/auth/login`)
+
+1. The LDAP directory checks the password (it is never stored). Wrong password or unknown login → `401`.
+2. Only accounts imported from CSV may log in. Valid in LDAP but not imported → `403`.
+3. First and last name are refreshed from LDAP on every login; the role always comes from the database.
+4. Returns `{ accessToken, user: { id, login, displayName, role } }`.
+
+**First admin.** Accounts are created only by CSV import, which needs an admin. A login listed in
+`Bootstrap__AdminLogins` that passes LDAP and has never existed in the database is created as an admin on
+its first login (locally: `admin` / `haslo`). A deleted account is never recreated this way.
+
+**Rate limit.** Login attempts are limited per client IP (`429` when exceeded). Behind nginx the client IP
+is taken from `X-Forwarded-For`.
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.

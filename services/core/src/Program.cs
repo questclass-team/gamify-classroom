@@ -1,9 +1,12 @@
 using System.Reflection;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -11,6 +14,7 @@ using QuestClass.Core.Common.Api;
 using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
+using QuestClass.Core.Features.Auth.Login;
 using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.Repositories;
 using Serilog;
@@ -74,6 +78,13 @@ builder.Services.AddProblemDetails(options =>
     options.CustomizeProblemDetails = context =>
     {
         context.ProblemDetails.Instance ??= context.HttpContext.Request.Path;
+
+        // ASP.NET Core has default titles only for some codes (none for 429); use the HTTP reason phrase.
+        if (string.IsNullOrEmpty(context.ProblemDetails.Title))
+        {
+            var statusCode = context.ProblemDetails.Status ?? context.HttpContext.Response.StatusCode;
+            context.ProblemDetails.Title = ReasonPhrases.GetReasonPhrase(statusCode);
+        }
     };
 });
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -152,6 +163,51 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AuthPolicies.Teacher, policy => policy.RequireRole(Role.Teacher.ToApiName()))
     .AddPolicy(AuthPolicies.Student, policy => policy.RequireRole(Role.Student.ToApiName()));
 
+// Login
+builder.Services
+    .AddOptions<BootstrapOptions>()
+    .BindConfiguration(BootstrapOptions.SectionName);
+
+builder.Services.AddScoped<LoginHandler>();
+
+// Rate Limiting
+builder.Services
+    .AddOptions<RateLimitingOptions>()
+    .BindConfiguration(RateLimitingOptions.SectionName);
+
+builder.Services.AddRateLimiter(options =>
+{
+    // An empty 429 is turned into problem details by UseStatusCodePages.
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(RateLimitPolicies.Login, httpContext =>
+    {
+        var permitsPerMinute = httpContext.RequestServices
+            .GetRequiredService<IOptions<RateLimitingOptions>>()
+            .Value
+            .LoginPermitsPerMinute;
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitsPerMinute,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
+});
+
+// Behind nginx every request comes from the proxy; the client address is in X-Forwarded-For.
+// Any proxy is trusted because the service is reachable only through nginx inside the Docker network.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -166,6 +222,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 var app = builder.Build();
 
 // HTTP request pipeline
+app.UseForwardedHeaders();
+
 app.UseSerilogRequestLogging();
 
 app.UseExceptionHandler();
@@ -185,6 +243,7 @@ app.UseSwaggerUI(options =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

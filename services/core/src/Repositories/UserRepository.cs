@@ -27,9 +27,25 @@ namespace QuestClass.Core.Repositories
                 .SingleOrDefaultAsync(user => user.Login == normalizedLogin, cancellationToken);
         }
 
+        public Task<bool> ExistsIncludingDeletedAsync(string login, CancellationToken cancellationToken = default)
+        {
+            var normalizedLogin = User.NormalizeLogin(login);
+
+            return _dbContext.Users
+                .IgnoreQueryFilters([QueryFilters.SoftDelete])
+                .AnyAsync(user => user.Login == normalizedLogin, cancellationToken);
+        }
+
         public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
             _dbContext.Users.Add(user);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+        {
+            _dbContext.Users.Update(user);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
