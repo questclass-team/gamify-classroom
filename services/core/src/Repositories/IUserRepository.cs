@@ -13,6 +13,19 @@ namespace QuestClass.Core.Repositories
         /// <summary>True when the login was ever used, including soft-deleted accounts.</summary>
         Task<bool> ExistsIncludingDeletedAsync(string login, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Accounts with any of these (normalized) logins, soft-deleted ones included, keyed by login. They are
+        /// tracked: changes to them are saved by <see cref="SaveImportAsync"/>.
+        /// </summary>
+        Task<IReadOnlyDictionary<string, User>> GetByLoginsIncludingDeletedAsync(
+            IReadOnlyCollection<string> logins,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Adds the new accounts and saves changes to tracked ones (restored accounts) in a single transaction.
+        /// </summary>
+        Task SaveImportAsync(IReadOnlyCollection<User> newUsers, CancellationToken cancellationToken = default);
+
         Task AddAsync(User user, CancellationToken cancellationToken = default);
 
         Task UpdateAsync(User user, CancellationToken cancellationToken = default);

@@ -16,9 +16,8 @@ namespace QuestClass.Core.Features.Auth.Login
                 .WithMessage("Login is required.")
                 .Must(login => login.Trim().Length <= User.LoginMaxLength)
                 .WithMessage($"Login must not exceed {User.LoginMaxLength} characters.")
-                // Faculty logins are letters, digits, dots, underscores and hyphens. Anything else could
-                // change the meaning of the LDAP query, so it is rejected before reaching the directory.
-                .Matches(@"^\s*[A-Za-z0-9._-]+\s*$")
+                // Rejected before reaching the directory: see User.IsValidLogin.
+                .Must(User.IsValidLogin)
                 .WithMessage("Login may contain only letters, digits, '.', '_' and '-'.");
 
             RuleFor(request => request.Password)

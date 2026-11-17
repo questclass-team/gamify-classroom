@@ -7,6 +7,9 @@ import {
 
 const ROLES: readonly string[] = ['student', 'teacher', 'admin'] satisfies Role[]
 
+// Same rule as core (User.IsValidLogin): what a faculty LDAP login can contain.
+const VALID_LOGIN = /^[a-z0-9._-]{1,64}$/
+
 /**
  * Mock of the core import: adds new accounts to `users` in place.
  * Returns null when the header is missing or wrong (backend answers 400).
@@ -31,6 +34,8 @@ export function importUsersFromCsv(text: string, users: CurrentUser[]): UserImpo
 
     if (login === '' || firstName === '' || lastName === '' || role === '') {
       report.skipped.push({ line, login: login || null, reason: 'missing_field' })
+    } else if (!VALID_LOGIN.test(login)) {
+      report.skipped.push({ line, login, reason: 'invalid_login' })
     } else if (!ROLES.includes(role)) {
       report.skipped.push({ line, login, reason: 'invalid_role' })
     } else if (seenInFile.has(login)) {

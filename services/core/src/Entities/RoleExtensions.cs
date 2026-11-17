@@ -15,5 +15,21 @@ namespace QuestClass.Core.Entities
                 _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown role.")
             };
         }
+
+        /// <summary>Parses "student" / "teacher" / "admin" in any letter case.</summary>
+        public static bool TryParseApiName(string? value, out Role role)
+        {
+            foreach (var candidate in Enum.GetValues<Role>())
+            {
+                if (string.Equals(candidate.ToApiName(), value?.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    role = candidate;
+                    return true;
+                }
+            }
+
+            role = default;
+            return false;
+        }
     }
 }

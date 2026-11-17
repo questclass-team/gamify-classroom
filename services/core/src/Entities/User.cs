@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using QuestClass.Core.Common.Persistence;
 
 namespace QuestClass.Core.Entities
@@ -5,7 +6,7 @@ namespace QuestClass.Core.Entities
     /// <summary>
     /// Account imported from CSV. The password is never stored: it is checked against LDAP on every login.
     /// </summary>
-    public sealed class User : ISoftDeletable
+    public sealed partial class User : ISoftDeletable
     {
         public const int LoginMaxLength = 64;
         public const int NameMaxLength = 100;
@@ -35,6 +36,18 @@ namespace QuestClass.Core.Entities
 
         public DateTimeOffset? DeletedAt { get; set; }
 
+        /// <summary>
+        /// Faculty logins are letters, digits, '.', '_' and '-' (checked after <see cref="NormalizeLogin"/>).
+        /// Anything else could change the meaning of an LDAP query and could never log in, so it is rejected
+        /// both at login and at CSV import.
+        /// </summary>
+        public static bool IsValidLogin(string login)
+        {
+            var normalizedLogin = NormalizeLogin(login);
+
+            return normalizedLogin.Length <= LoginMaxLength && AllowedLoginCharacters().IsMatch(normalizedLogin);
+        }
+
         /// <summary>LDAP logins are case-insensitive, so "JKowalski" and "jkowalski" are the same account.</summary>
         public static string NormalizeLogin(string login)
         {
@@ -42,5 +55,8 @@ namespace QuestClass.Core.Entities
 
             return login.Trim().ToLowerInvariant();
         }
+
+        [GeneratedRegex("^[a-z0-9._-]+$", RegexOptions.CultureInvariant)]
+        private static partial Regex AllowedLoginCharacters();
     }
 }

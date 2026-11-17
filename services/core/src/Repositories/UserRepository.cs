@@ -36,6 +36,28 @@ namespace QuestClass.Core.Repositories
                 .AnyAsync(user => user.Login == normalizedLogin, cancellationToken);
         }
 
+        public async Task<IReadOnlyDictionary<string, User>> GetByLoginsIncludingDeletedAsync(
+            IReadOnlyCollection<string> logins,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedLogins = logins.Select(User.NormalizeLogin).Distinct().ToList();
+
+            var users = await _dbContext.Users
+                .IgnoreQueryFilters([QueryFilters.SoftDelete])
+                .Where(user => normalizedLogins.Contains(user.Login))
+                .ToListAsync(cancellationToken);
+
+            return users.ToDictionary(user => user.Login);
+        }
+
+        public async Task SaveImportAsync(IReadOnlyCollection<User> newUsers, CancellationToken cancellationToken = default)
+        {
+            // One SaveChanges is one transaction: the whole file is imported, or nothing.
+            _dbContext.Users.AddRange(newUsers);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
             _dbContext.Users.Add(user);

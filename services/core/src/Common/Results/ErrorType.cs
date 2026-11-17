@@ -7,6 +7,7 @@ namespace QuestClass.Core.Common.Results
         Unauthorized,
         Forbidden,
         NotFound,
-        Conflict
+        Conflict,
+        TooLarge
     }
 }

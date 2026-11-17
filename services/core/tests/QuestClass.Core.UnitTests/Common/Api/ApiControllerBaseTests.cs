@@ -16,6 +16,7 @@ namespace QuestClass.Core.UnitTests.Common.Api
         [InlineData(ErrorType.Forbidden, StatusCodes.Status403Forbidden)]
         [InlineData(ErrorType.NotFound, StatusCodes.Status404NotFound)]
         [InlineData(ErrorType.Conflict, StatusCodes.Status409Conflict)]
+        [InlineData(ErrorType.TooLarge, StatusCodes.Status413PayloadTooLarge)]
         public void HandleFailure_ShouldMapErrorTypeToProblemDetails(ErrorType errorType, int expectedStatusCode)
         {
             var result = Result.Failure(new Error("Test.Code", "Test message.", errorType));

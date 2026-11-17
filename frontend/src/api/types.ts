@@ -42,6 +42,8 @@ export type ImportSkipReason =
   /** Login appears earlier in the same file. */
   | 'duplicate_in_file'
   | 'missing_field'
+  /** Login has characters other than letters, digits, '.', '_' and '-', or is longer than 64. */
+  | 'invalid_login'
   | 'invalid_role'
 
 export interface ImportedUser {

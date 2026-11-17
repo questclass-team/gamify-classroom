@@ -109,6 +109,7 @@ The service uses **vertical slices**: everything one endpoint needs lives in its
   | `Forbidden` | 403 |
   | `NotFound` | 404 |
   | `Conflict` | 409 |
+  | `TooLarge` | 413 |
 
 - **Request validation** lives only in FluentValidation validators. They are picked up automatically and
   run before the endpoint by `ValidationFilter`.
@@ -200,5 +201,28 @@ The access token lives 15 minutes; the session lives up to 8 hours thanks to a r
   no access token and can be called twice. Other sessions of the user (other devices) stay.
 
 In Swagger UI: log in, then call refresh or logout directly; the browser sends the cookie by itself.
+
+## Account import (`POST /api/core/admin/users/import`, admin only)
+
+Accounts are created only this way (FR-04). Upload the CSV as `multipart/form-data`, field `file`:
+
+```csv
+login,first_name,last_name,role
+jkowalski,Jan,Kowalski,teacher
+anowak,Anna,Nowak,student
+```
+
+- First line is the header (any letter case); delimiter `;` when the header has it, otherwise `,`; values may
+  be quoted as Excel writes them. The file must be **UTF-8** (in Excel: "CSV UTF-8"), at most **1 MB**.
+- Roles: `student`, `teacher`, `admin`. Logins are stored lower-case.
+- The answer lists every row: `created` (line, login, displayName, role) and `skipped` (line, login, reason).
+  Reasons: `missing_field`, `invalid_login` (characters other than letters, digits, `.`, `_`, `-`),
+  `invalid_role`, `duplicate_in_file`, `already_exists`. Importing the same file again creates nothing.
+- A deleted account in the file is **restored** (same id) and reported as created.
+- The whole file is saved in one transaction.
+- Errors: `400` no file / wrong header / not UTF-8, `401` no token, `403` not an admin, `413` file too large.
+
+[`infra/ldap/sample-import.csv`](../../infra/ldap/sample-import.csv) is a ready file with the test accounts of
+the local LDAP: log in as `admin` / `haslo` (bootstrap admin) and import it to get teachers and students.
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.
