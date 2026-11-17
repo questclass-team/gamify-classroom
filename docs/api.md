@@ -37,6 +37,54 @@ Core signs the token with the shared `Jwt__Secret` value. Game receives the
 same value as `JWT_SECRET`. The secret must never be committed to the
 repository.
 
+## Core service
+
+Errors are RFC 9457 problem details (`application/problem+json`, fields `type`, `title`, `status`,
+`detail`, `instance`, `traceId`). Full schemas: `/api/core/swagger`. The frontend's TypeScript types for these
+endpoints are in `frontend/src/api/types.ts`.
+
+### Session
+
+The access token (JWT above) lives 15 minutes. Login also sets the refresh cookie `qc_refresh` (HttpOnly,
+Secure, SameSite=Strict, path `/api/core/auth`); the session lasts at most 8 hours from login. Browsers accept
+the Secure cookie on `https://` and on `http://localhost` only.
+
+| Endpoint | Auth | Request | Responses |
+|---|---|---|---|
+| `POST /api/core/auth/login` | none | `{ "login", "password" }` (LABS / test LDAP) | `200 { accessToken, user }` + cookie; `400` invalid input; `401` wrong login or password; `403` valid LDAP account that was not imported; `429` too many attempts from this address |
+| `POST /api/core/auth/refresh` | refresh cookie | no body | `200 { accessToken, user }` + new cookie (rotation); `401` session ended (expired, logged out or reused cookie) |
+| `POST /api/core/auth/logout` | refresh cookie | no body | `204` (also when already logged out); other devices stay logged in |
+| `GET /api/core/auth/me` | Bearer | — | `200 user`; `401` no valid token or the account no longer exists |
+
+`user` is `{ "id": "<uuid>", "login": "jkowalski", "displayName": "Jan Kowalski", "role": "teacher" }`.
+The role and the account are read from the database on every refresh and `/me`, so a changed role or a deleted
+account takes effect without logging in again.
+
+A refresh cookie that was already rotated and comes back after 30 seconds is treated as stolen: every session
+of that user ends.
+
+### Account import
+
+`POST /api/core/admin/users/import` — admin only, `multipart/form-data` with the CSV in the field `file`
+(UTF-8, at most 1 MB):
+
+```csv
+login,first_name,last_name,role
+jkowalski,Jan,Kowalski,teacher
+```
+
+Response `200`:
+
+```json
+{
+  "created": [{ "line": 2, "login": "jkowalski", "displayName": "Jan Kowalski", "role": "teacher" }],
+  "skipped": [{ "line": 3, "login": "anowak", "reason": "already_exists" }]
+}
+```
+
+Skip reasons: `missing_field`, `invalid_login`, `invalid_role`, `duplicate_in_file`, `already_exists`. Errors:
+`400` no file / wrong header / not UTF-8, `401`, `403` not an admin, `413` file larger than 1 MB.
+
 ## Game service
 
 ### `GET /api/game/auth/me/`
@@ -92,7 +140,7 @@ http://localhost:8080/api/game/schema/
 
 ## Current scope
 
-Core login, LDAP authentication and JWT issuing are implemented on the
-`feature/SCRUM-7-ldap-login` branch. The Core and Game branches must use the
-same `JWT_SECRET`, issuer, audience and `HS256` algorithm before they are
-connected end to end.
+Core issues the tokens (login, refresh, logout, `/me`) and imports accounts; Game verifies the same tokens.
+Both use the same `JWT_SECRET` (Core: `Jwt__Secret`), issuer `questclass-core`, audience `questclass` and
+`HS256` — checked end to end: a token from Core is accepted by `GET /api/game/auth/me/` with the same user id
+and role.
