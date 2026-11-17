@@ -7,17 +7,30 @@ Owner: Kiryl.
 
 ## Run locally
 
-Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). From `services/core`:
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and Docker.
 
-```sh
-dotnet run --project src
-```
+1. Start a local PostgreSQL once (the credentials match `appsettings.Development.json`, they are dummy
+   values for local development only). It uses host port **5433** so it does not clash with a PostgreSQL
+   installed directly on the machine or the one from `docker compose`:
+
+   ```sh
+   docker run -d --name questclass-postgres -e POSTGRES_USER=questclass -e POSTGRES_PASSWORD=questclass -e POSTGRES_DB=questclass -p 5433:5432 postgres:17-alpine
+   ```
+
+   Later just `docker start questclass-postgres`.
+
+2. Run the API from `services/core`:
+
+   ```sh
+   dotnet run --project src
+   ```
 
 | What | URL |
 |---|---|
 | API docs (Swagger UI) | http://localhost:5069/api/core/swagger |
 | OpenAPI document | http://localhost:5069/api/core/swagger/v1/swagger.json |
-| Liveness check | http://localhost:5069/health/live |
+| Liveness check (process is up) | http://localhost:5069/health/live |
+| Readiness check (database is reachable) | http://localhost:5069/health/ready |
 
 ## Tests and formatting
 
@@ -73,9 +86,17 @@ The service uses **vertical slices**: everything one endpoint needs lives in its
 
 All API routes, including Swagger, already start with `/api/core`. The reverse proxy must forward
 `/api/core/` to this service **without stripping the prefix**. `/health/live` is outside the prefix on
-purpose: it is meant for container health checks inside the Docker network, not for the public proxy.
+purpose: `/health/live` and `/health/ready` are meant for container health checks inside the Docker
+network, not for the public proxy.
 
 ## Configuration
 
 Settings come from `appsettings.json` and can be overridden with environment variables, using `__` as the
-section separator (for example `Serilog__MinimumLevel__Default=Debug`).
+section separator (for example `Serilog__MinimumLevel__Default=Debug`). The service refuses to start when
+a required setting is missing or invalid.
+
+| Environment variable | Required | Example |
+|---|---|---|
+| `ConnectionStrings__Core` | yes | `Host=postgres;Port=5432;Database=questclass;Username=questclass;Password=...` |
+
+All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.
