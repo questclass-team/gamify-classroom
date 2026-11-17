@@ -1,3 +1,5 @@
+using FluentValidation;
+using QuestClass.Core.Common.Api;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,8 +18,22 @@ builder.Services.Configure<HostOptions>(options =>
     options.ShutdownTimeout = TimeSpan.FromSeconds(20);
 });
 
-// Controllers
-builder.Services.AddControllers();
+// Controllers & Validation
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+});
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+// Exception Handling
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Instance ??= context.HttpContext.Request.Path;
+    };
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Time Abstraction
 builder.Services.AddSingleton(TimeProvider.System);
@@ -26,6 +42,9 @@ var app = builder.Build();
 
 // HTTP request pipeline
 app.UseSerilogRequestLogging();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.MapControllers();
 
