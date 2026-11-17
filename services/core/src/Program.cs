@@ -24,6 +24,7 @@ using QuestClass.Core.Features.Auth.Shared.Tokens;
 using QuestClass.Core.Features.Groups.Create;
 using QuestClass.Core.Features.Groups.GetById;
 using QuestClass.Core.Features.Groups.List;
+using QuestClass.Core.Features.Students.Search;
 using QuestClass.Core.Features.Users.Import;
 using QuestClass.Core.Repositories;
 using Serilog;
@@ -196,6 +197,9 @@ builder.Services.AddScoped<ImportUsersHandler>();
 builder.Services.AddScoped<CreateGroupHandler>();
 builder.Services.AddScoped<ListGroupsHandler>();
 builder.Services.AddScoped<GetGroupHandler>();
+
+// Students feature
+builder.Services.AddScoped<SearchStudentsHandler>();
 
 // Rate Limiting
 builder.Services

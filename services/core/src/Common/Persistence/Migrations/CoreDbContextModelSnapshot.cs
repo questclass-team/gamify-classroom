@@ -187,6 +187,12 @@ namespace QuestClass.Core.Common.Persistence.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("role");
 
+                    b.Property<string>("SearchText")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("search_text")
+                        .HasComputedColumnSql("lower(translate(login || ' ' || first_name || ' ' || last_name, 'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ', 'acelnoszzACELNOSZZ'))", true);
+
                     b.HasKey("Id")
                         .HasName("pk_users");
 

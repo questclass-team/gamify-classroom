@@ -53,6 +53,10 @@ namespace QuestClass.Core.Common.Persistence.Configurations
             builder.Property(user => user.CreatedAt)
                 .IsRequired();
 
+            // Kept up to date by PostgreSQL on every insert and update (imports, logins, restores).
+            builder.Property<string>(SearchText.PropertyName)
+                .HasComputedColumnSql(SearchText.ColumnSql, stored: true);
+
             builder.Property(user => user.IsDeleted)
                 .HasDefaultValue(false);
         }
