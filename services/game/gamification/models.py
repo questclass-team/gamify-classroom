@@ -6,6 +6,8 @@ CURRENCY_NAME_MAX_LENGTH = 30
 RANK_NAME_MAX_LENGTH = 40
 RANK_THRESHOLD_MAX = 1_000_000
 MAX_RANKS = 20
+CURRENCY_ICON_MAX_BYTES = 256 * 1024
+CURRENCY_ICON_CONTENT_TYPES = frozenset({"image/png", "image/gif", "image/webp"})
 
 
 class GroupGameConfiguration(models.Model):
@@ -17,8 +19,8 @@ class GroupGameConfiguration(models.Model):
         max_length=CURRENCY_NAME_MAX_LENGTH,
         default="Punkty",
     )
-    currency_icon_url = models.URLField(
-        max_length=2048,
+    currency_icon = models.FileField(
+        upload_to="currency-icons/%Y/%m/",
         null=True,
         blank=True,
     )
