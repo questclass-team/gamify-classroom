@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+
+/*
+ * Design tokens: paper, ink, emerald and gold. Tailwind's default palette is disabled,
+ * so only these colors exist. A future fantasy/pixel theme overrides the same variables
+ * under [data-theme='fantasy']; components stay unchanged.
+ */
+@theme {
+  --color-*: initial;
+  --color-canvas: #f6f3ec;
+  --color-surface: #fffdf8;
+  --color-surface-muted: #f0ebe0;
+  /* Decorative dividers only. */
+  --color-line: #e2dacb;
+  /* Borders that mark a control (inputs, secondary buttons): ≥ 3:1 against surface. */
+  --color-line-strong: #8c8474;
+  --color-fg: #1f1c17;
+  --color-muted: #5f594e;
+  --color-header: #1f1c17;
+  --color-on-header: #f6f3ec;
+  --color-primary: #1d5b47;
+  --color-primary-hover: #154536;
+  --color-on-primary: #ffffff;
+  /* Gold accent: decoration and large text only, never small text on light backgrounds. */
+  --color-accent: #c39233;
+  --color-focus: #2457a6;
+  --color-success: #2c6a3a;
+  --color-success-soft: #e8f1e8;
+  --color-warning: #8a5a00;
+  --color-error: #a2321f;
+  --color-error-soft: #f8e8e3;
+  --color-info: #2457a6;
+  --color-info-soft: #eaf0f8;
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Headings and numbers. The pixel font goes here in the fantasy theme. */
+  --font-display: 'Fraunces Variable', Georgia, serif;
+
+  --radius-ui: 3px;
+}
+
+/* Frame width of panels, inputs and buttons (2–3px in the fantasy theme). */
+@utility border-ui {
+  border-width: var(--ui-border-width);
+}
+
+/* Faint pixel-dot texture for dark brand surfaces. */
+@utility bg-pixel-dots {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--color-accent) 22%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 14px 14px;
+}
+
+@layer base {
+  :root {
+    --ui-border-width: 1px;
+    color-scheme: light;
+    accent-color: var(--color-primary);
+  }
+
+  body {
+    @apply bg-canvas font-sans text-fg antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 35%, white);
+    color: var(--color-fg);
+  }
+}
