@@ -145,10 +145,14 @@ The first build takes a few minutes. When all containers are healthy, open:
 | Service | URL |
 |---|---|
 | 🖥️ Frontend | http://localhost:8080 |
+| 🟦 Core API docs | http://localhost:8080/api/core/swagger |
 | 🟩 Game API docs | http://localhost:8080/api/game/docs |
 
-The Core container is not part of the current Compose stack yet, so its
-Swagger URL becomes available after the Core service is added.
+Core's database migrations are applied automatically on every start (the one-shot `core-migrate` container).
+
+> [!NOTE]
+> Open the stack on `http://localhost`. The login session cookie is `Secure`, and browsers accept it over plain
+> HTTP only on `localhost`: from another device (`http://<your-ip>:8080`) you would be logged out after 15 minutes.
 
 ## 3. Log in
 
@@ -206,6 +210,8 @@ cd services/core
 dotnet restore
 dotnet run --project src
 ```
+
+Database, LDAP and migrations: see [`services/core/README.md`](services/core/README.md#run-locally).
 </details>
 
 <details>

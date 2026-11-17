@@ -62,7 +62,7 @@ jobs:
             echo "$name=$result" >> "$GITHUB_OUTPUT"
             declare "changed_$name=$result"
           done
-          # The stack builds the frontend into nginx and runs core's migrations against PostgreSQL.
+          # The stack builds the frontend into nginx and core into its own image (with its migrations).
           if [ "$changed_infra" = true ] || [ "$changed_frontend" = true ] || [ "$changed_core" = true ]; then
             echo "compose=true" >> "$GITHUB_OUTPUT"
           else
@@ -176,21 +176,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
-        with:
-          global-json-file: services/core/global.json # .NET 10 SDK; the runner also has 11, which dotnet would pick otherwise
       - run: cp .env.example .env
+      # Also applies core's migrations as core_user (`core-migrate`), so a migration that needs more than
+      # the init script's permissions (core_user owns only schema core) fails here.
       - run: docker compose up --build --wait --wait-timeout 300
       - run: infra/smoke-test.sh
-      # Core's migrations must work with the init script's permissions (core_user owns only schema core).
-      - name: Apply core migrations as core_user
-        working-directory: services/core
-        run: |
-          set -a; . ../../.env; set +a
-          dotnet restore
-          dotnet tool restore
-          export ConnectionStrings__Core="Host=127.0.0.1;Port=$POSTGRES_PORT;Database=$POSTGRES_DB;Username=core_user;Password=$CORE_DB_PASSWORD"
-          dotnet ef database update --project src
       - name: Container logs
         if: failure()
         run: docker compose ps --all && docker compose logs --no-color

@@ -15,6 +15,12 @@ x-defaults: &defaults
       max-size: 10m
       max-file: "3"
 
+# Core's database connection, shared by `core` and `core-migrate`. core_user may use schema core only.
+# No Kerberos here: without `Gss Encryption Mode=Disable` Npgsql tries it on every new connection and
+# the Alpine image logs "Cannot load library libgssapi_krb5.so.2".
+x-core-database: &core-database
+  ConnectionStrings__Core: Host=postgres;Port=5432;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env};Gss Encryption Mode=Disable
+
 services:
   postgres:
     <<: *defaults
@@ -53,6 +59,41 @@ services:
       - ldap-data:/var/lib/openldap/openldap-data
     ports:
       - "127.0.0.1:${LDAP_PORT:-389}:389"
+
+  # One-shot: applies core's EF Core migrations, then exits. `core` starts only after it succeeded.
+  core-migrate:
+    <<: *defaults
+    build:
+      context: services/core
+      target: migrate
+    restart: "no" # must not be started again after it exits
+    environment:
+      <<: *core-database
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  core:
+    <<: *defaults
+    build:
+      context: services/core
+      target: final
+    # The app waits up to 20 s for running requests on shutdown; Docker's default is 10 s before SIGKILL.
+    stop_grace_period: 30s
+    environment:
+      <<: *core-database
+      Ldap__Host: ldap
+      Ldap__BaseDn: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
+      Jwt__Secret: ${JWT_SECRET:?set JWT_SECRET in .env}
+      Bootstrap__AdminLogins: ${CORE_ADMIN_LOGINS:-admin}
+    depends_on:
+      core-migrate:
+        condition: service_completed_successfully
+      ldap:
+        condition: service_healthy
+    # Reached only through nginx (/api/core/); the health check is in services/core/Dockerfile.
+    expose:
+      - "8080"
 
   game:
     <<: *defaults
