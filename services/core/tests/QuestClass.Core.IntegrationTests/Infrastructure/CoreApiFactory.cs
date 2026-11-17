@@ -16,6 +16,10 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
         {
             builder.UseEnvironment("Testing");
             builder.UseSetting("ConnectionStrings:Core", _connectionString);
+
+            // Only satisfies startup validation: tests that run through the API never reach a real directory.
+            builder.UseSetting("Ldap:Host", "ldap.invalid");
+            builder.UseSetting("Ldap:BaseDn", "dc=labs,dc=questclass,dc=test");
         }
     }
 }

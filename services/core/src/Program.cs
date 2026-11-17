@@ -8,6 +8,7 @@ using Microsoft.OpenApi;
 using QuestClass.Core.Common.Api;
 using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.Repositories;
 using Serilog;
 
@@ -96,6 +97,15 @@ builder.Services.AddDbContext<CoreDbContext>((serviceProvider, options) =>
         // Tables and columns as PostgreSQL expects them: users.first_name, not "Users"."FirstName".
         .UseSnakeCaseNamingConvention();
 });
+
+// LDAP
+builder.Services
+    .AddOptions<LdapOptions>()
+    .BindConfiguration(LdapOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IValidateOptions<LdapOptions>, LdapOptionsValidator>();
+builder.Services.AddSingleton<ILdapAuthenticator, LdapAuthenticator>();
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();

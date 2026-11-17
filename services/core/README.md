@@ -19,14 +19,22 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) an
 
    Later just `docker start questclass-postgres`.
 
-2. Create or update the database tables (migrations are never applied automatically on startup):
+2. Start the test LDAP directory (from the repository root; it is the `ldap` service of the shared
+   `docker-compose.yml`, test accounts in `infra/ldap/*.csv`, every password `haslo`):
+
+   ```sh
+   cp .env.example .env
+   docker compose up -d ldap
+   ```
+
+3. Create or update the database tables (migrations are never applied automatically on startup):
 
    ```sh
    dotnet tool restore
    dotnet ef database update --project src
    ```
 
-3. Run the API from `services/core`:
+4. Run the API from `services/core`:
 
    ```sh
    dotnet run --project src
@@ -130,6 +138,14 @@ a required setting is missing or invalid.
 
 | Environment variable | Required | Example |
 |---|---|---|
-| `ConnectionStrings__Core` | yes | `Host=postgres;Port=5432;Database=questclass;Username=questclass;Password=...` |
+| `ConnectionStrings__Core` | yes | `Host=postgres;Port=5432;Database=questclass;Username=core_user;Password=...` |
+| `Ldap__Host` | yes | `ldap` |
+| `Ldap__Port` | no (389) | `636` |
+| `Ldap__UseSsl` | no (false) | `true` — use LDAPS for a real directory, the password travels to it |
+| `Ldap__BaseDn` | yes | `dc=labs,dc=questclass,dc=test` |
+| `Ldap__BindTemplate` | no (`uid={login},ou=people,{baseDn}`) | `{login}@labs.example` (Active Directory UPN) |
+| `Ldap__UserFilterTemplate` | no (`(uid={login})`) | `(sAMAccountName={login})` (Active Directory) |
+| `Ldap__FirstNameAttribute` / `Ldap__LastNameAttribute` | no (`givenName` / `sn`) | |
+| `Ldap__TimeoutSeconds` | no (5) | |
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.
