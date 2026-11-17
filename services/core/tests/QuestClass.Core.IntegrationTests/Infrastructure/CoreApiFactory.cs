@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -9,7 +10,11 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
 {
     public sealed class CoreApiFactory : WebApplicationFactory<Program>
     {
-        public const string JwtSecret = "integration-tests-secret-at-least-32-bytes";
+        /// <summary>
+        /// Random for every test run: a key-like literal in the repository would be reported by the secret scan.
+        /// </summary>
+        public static readonly string JwtSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
         public const string BootstrapAdminLogin = "admin";
 
         private readonly string _connectionString;
