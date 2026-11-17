@@ -45,18 +45,43 @@ export function Button({
 export function TextField({
   label,
   id,
+  error,
+  hint,
+  labelClassName = '',
+  className = '',
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; id: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & {
+  label: string
+  id: string
+  /** Shown under the field and linked via aria-describedby; marks the field invalid. */
+  error?: string
+  hint?: string
+  /** E.g. `sm:sr-only` when a table-like header labels the column visually. */
+  labelClassName?: string
+}) {
+  const describedBy = [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean).join(' ')
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className={`text-sm font-medium ${labelClassName}`}>
         {label}
       </label>
       <input
         id={id}
-        className={`min-h-10 rounded-ui border-ui border-line-strong bg-surface px-3 text-fg placeholder:text-muted/70 disabled:opacity-60 ${FOCUS_RING}`}
+        aria-invalid={error !== undefined || undefined}
+        aria-describedby={describedBy || undefined}
+        className={`min-h-10 w-full min-w-0 rounded-ui border-ui bg-surface px-3 text-fg placeholder:text-muted/70 disabled:opacity-60 aria-invalid:border-error aria-invalid:bg-error-soft/40 ${error === undefined ? 'border-line-strong' : ''} ${FOCUS_RING} ${className}`}
         {...props}
       />
+      {hint !== undefined && (
+        <p id={`${id}-hint`} className="text-xs text-muted">
+          {hint}
+        </p>
+      )}
+      {error !== undefined && (
+        <p id={`${id}-error`} className="text-xs font-medium text-error">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

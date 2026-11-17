@@ -121,6 +121,51 @@ export interface AddGroupStudentRequest {
   studentId: string
 }
 
+// ---- game service: points (story currency) and ranks per group ----
+
+export const CURRENCY_NAME_MAX_LENGTH = 30
+export const RANK_NAME_MAX_LENGTH = 40
+export const MAX_RANKS = 20
+export const RANK_THRESHOLD_MAX = 1_000_000
+export const CURRENCY_ICON_MAX_BYTES = 256 * 1024
+export const CURRENCY_ICON_TYPES = ['image/png', 'image/gif', 'image/webp']
+
+export interface Rank {
+  name: string
+  /** Balance needed to reach the rank: integer, 0…RANK_THRESHOLD_MAX, unique within a group. */
+  threshold: number
+}
+
+/**
+ * GET /api/game/groups/{groupId}/config -> GroupGameConfig (defaults when never configured).
+ * 404 when the group does not exist or belongs to another teacher.
+ */
+export interface GroupGameConfig {
+  currencyName: string
+  /** Null when no icon was uploaded. */
+  currencyIconUrl: string | null
+  /** Sorted by threshold, ascending. */
+  ranks: Rank[]
+}
+
+/**
+ * PUT /api/game/groups/{groupId}/config -> GroupGameConfig.
+ * 400 when a name is empty/too long or thresholds are negative, non-integer or repeated.
+ */
+export interface UpdateGameConfigRequest {
+  currencyName: string
+  ranks: Rank[]
+}
+
+/**
+ * PUT /api/game/groups/{groupId}/config/currency-icon (multipart field `file`) -> CurrencyIconResponse.
+ * 400 for other types than CURRENCY_ICON_TYPES or files over CURRENCY_ICON_MAX_BYTES.
+ * DELETE on the same URL removes the icon -> 204.
+ */
+export interface CurrencyIconResponse {
+  currencyIconUrl: string
+}
+
 /** Error body (ASP.NET Core / RFC 9457 problem details). */
 export interface ProblemDetails {
   type?: string

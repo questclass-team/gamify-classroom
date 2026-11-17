@@ -1,12 +1,17 @@
 import { delay, http, HttpResponse } from 'msw'
 import {
+  CURRENCY_ICON_MAX_BYTES,
+  CURRENCY_ICON_TYPES,
   GROUP_NAME_MAX_LENGTH,
+  RANK_THRESHOLD_MAX,
   STUDENT_SEARCH_MIN_LENGTH,
   USER_IMPORT_CSV_HEADER,
   type AddGroupStudentRequest,
   type CreateGroupRequest,
+  type CurrencyIconResponse,
   type CurrentUser,
   type GroupDetail,
+  type GroupGameConfig,
   type GroupStudent,
   type GroupSummary,
   type LoginRequest,
@@ -14,9 +19,18 @@ import {
   type ProblemDetails,
   type Role,
   type StudentSummary,
+  type UpdateGameConfigRequest,
   type UserImportReport,
 } from '../api/types'
-import { MOCK_PASSWORD, mockGroups, mockLdapOnlyLogins, mockUsers, type MockGroup } from './data'
+import {
+  DEFAULT_GAME_CONFIG,
+  MOCK_PASSWORD,
+  mockGameConfigs,
+  mockGroups,
+  mockLdapOnlyLogins,
+  mockUsers,
+  type MockGroup,
+} from './data'
 import { createMockToken, readMockBearer } from './jwt'
 import { importUsersFromCsv } from './userImport'
 
@@ -154,6 +168,68 @@ export const handlers = [
     const group = ownGroup(request, params.groupId)
     if (group instanceof Response) return group
     group.members = group.members.filter((member) => member.studentId !== params.studentId)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get('/api/game/groups/:groupId/config', async ({ request, params }) => {
+    await delay(250)
+    const group = ownGroup(request, params.groupId)
+    if (group instanceof Response) return group
+    return HttpResponse.json(mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG)
+  }),
+
+  http.put('/api/game/groups/:groupId/config', async ({ request, params }) => {
+    await delay(350)
+    const group = ownGroup(request, params.groupId)
+    if (group instanceof Response) return group
+    const body = (await request.json()) as UpdateGameConfigRequest
+    const thresholds = body.ranks.map((rank) => rank.threshold)
+    const invalid =
+      body.currencyName.trim() === '' ||
+      body.ranks.some(
+        (rank) =>
+          rank.name.trim() === '' ||
+          !Number.isInteger(rank.threshold) ||
+          rank.threshold < 0 ||
+          rank.threshold > RANK_THRESHOLD_MAX,
+      ) ||
+      new Set(thresholds).size !== thresholds.length
+    if (invalid) return problem(400, 'Bad Request', 'Invalid currency name or rank thresholds.')
+    const config: GroupGameConfig = {
+      currencyName: body.currencyName.trim(),
+      currencyIconUrl: (mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG).currencyIconUrl,
+      ranks: body.ranks.toSorted((a, b) => a.threshold - b.threshold),
+    }
+    mockGameConfigs.set(group.id, config)
+    return HttpResponse.json(config)
+  }),
+
+  http.put('/api/game/groups/:groupId/config/currency-icon', async ({ request, params }) => {
+    await delay(350)
+    const group = ownGroup(request, params.groupId)
+    if (group instanceof Response) return group
+    const file = (await request.formData()).get('file')
+    if (
+      !(file instanceof File) ||
+      !CURRENCY_ICON_TYPES.includes(file.type) ||
+      file.size > CURRENCY_ICON_MAX_BYTES
+    ) {
+      return problem(400, 'Bad Request', 'Icon must be PNG, GIF or WebP up to 256 KB.')
+    }
+    // A real service stores the file; the mock inlines it so the URL works without a server.
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const currencyIconUrl = `data:${file.type};base64,${btoa(String.fromCharCode(...bytes))}`
+    const current = mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG
+    mockGameConfigs.set(group.id, { ...current, currencyIconUrl })
+    return HttpResponse.json({ currencyIconUrl } satisfies CurrencyIconResponse)
+  }),
+
+  http.delete('/api/game/groups/:groupId/config/currency-icon', async ({ request, params }) => {
+    await delay(250)
+    const group = ownGroup(request, params.groupId)
+    if (group instanceof Response) return group
+    const current = mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG
+    mockGameConfigs.set(group.id, { ...current, currencyIconUrl: null })
     return new HttpResponse(null, { status: 204 })
   }),
 ]
