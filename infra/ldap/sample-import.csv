@@ -1,0 +1,12 @@
+login,first_name,last_name,role
+admin,Anna,Administratorka,admin
+nauczyciel,Jan,Kowalski,teacher
+mwisniewski,Marek,Wiśniewski,teacher
+student,Ewa,Nowak,student
+pzielinski,Piotr,Zieliński,student
+kwojcik,Katarzyna,Wójcik,student
+alewandowska,Aleksandra,Lewandowska,student
+tkaminski,Tomasz,Kamiński,student
+zdabrowska,Zofia,Dąbrowska,student
+mszymanski,Michał,Szymański,student
+jwozniak,Julia,Woźniak,student

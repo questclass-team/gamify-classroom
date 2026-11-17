@@ -85,7 +85,7 @@
       <summary>🟪 <kbd>📁 infra</kbd> ── <i>Environment 🐳</i></summary>
       <blockquote>
         🌐 <code>nginx/</code> ── reverse proxy (<code>/api/core</code>, <code>/api/game</code>, <code>/</code>)<br>
-        👤 <code>ldap/</code> ── test LDAP users (student, teacher, admin)<br>
+        👤 <code>ldap/</code> ── test LDAP directory and test accounts<br>
         🗄️ <code>postgres/</code> ── database init, schemas <code>core</code> and <code>game</code>
       </blockquote>
     </details>
@@ -117,7 +117,7 @@ You only need **Git** and **Docker** (Docker Desktop on macOS/Windows) to run th
 
 > [!NOTE]
 > **Windows:** clone the repository inside WSL 2 or set `git config --global core.autocrlf input` before cloning. Shell scripts with Windows line endings (`CRLF`) break inside Linux containers.
-> **Ports:** the stack uses port `80` (nginx) and `5432` (PostgreSQL). Stop anything already running on them, or change the ports in `.env`.
+> **Ports:** the stack uses port `8080` (nginx), `5432` (PostgreSQL) and `389` (LDAP). If something on your machine already uses one of them, change `NGINX_PORT`, `POSTGRES_PORT` or `LDAP_PORT` in `.env`.
 
 ## 1. Clone and configure
 
@@ -140,19 +140,22 @@ The first build takes a few minutes. When all containers are healthy, open:
 
 | Service | URL |
 |---|---|
-| 🖥️ Frontend | http://localhost |
-| 🟦 Core API docs | http://localhost/api/core/swagger |
-| 🟩 Game API docs | http://localhost/api/game/docs |
+| 🖥️ Frontend | http://localhost:8080 |
+| 🟦 Core API docs | http://localhost:8080/api/core/swagger |
+| 🟩 Game API docs | http://localhost:8080/api/game/docs |
 
 ## 3. Log in
 
-The test LDAP server ships with ready accounts:
+The test LDAP server ships with ready accounts, the same ones the frontend mocks use. Every password is `haslo`.
 
-| Role | Login | Password |
-|---|---|---|
-| 🎓 Student | `student` | `student` |
-| 🧑‍🏫 Teacher | `teacher` | `teacher` |
-| 🛡️ Admin | `admin` | `admin` |
+| Role | Login |
+|---|---|
+| 🛡️ Admin | `admin` |
+| 🧑‍🏫 Teacher | `nauczyciel`, `mwisniewski` |
+| 🎓 Student | `student`, `pzielinski`, `kwojcik` and others from [`infra/ldap/sample-import.csv`](infra/ldap/sample-import.csv) |
+| 🚫 Not imported | `nowy` (valid in LDAP, but login is rejected with 403) |
+
+LDAP only checks the password; roles come from the CSV import. Import [`infra/ldap/sample-import.csv`](infra/ldap/sample-import.csv) as admin to get the roles above.
 
 These accounts exist only in the local test directory. In production, users log in with their faculty **LABS** account.
 
@@ -161,12 +164,12 @@ These accounts exist only in the local test directory. In production, users log 
 | Task | Command |
 |---|---|
 | Stop the stack | `docker compose down` |
-| Reset the database | `docker compose down -v` |
+| Reset the database and LDAP | `docker compose down -v` |
 | View logs of one service | `docker compose logs -f game` |
 | Apply game service migrations | `docker compose exec game python manage.py migrate` |
 | Run core tests | `docker compose exec core dotnet test` |
 | Run game tests | `docker compose exec game pytest` |
-| Run frontend tests | `docker compose exec frontend npm test` |
+| Run frontend tests | `cd frontend && npm test` (the frontend is built into the nginx image) |
 
 ## 5. Update to the latest version
 
