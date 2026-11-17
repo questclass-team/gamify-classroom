@@ -106,9 +106,14 @@ services:
       DB_HOST: postgres
       DB_PORT: "5432"
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORE_BASE_URL: http://core:8080
     depends_on:
       postgres:
         condition: service_healthy
+      core:
+        condition: service_healthy
+    volumes:
+      - game-media:/app/media
     expose:
       - "8000"
     healthcheck:
@@ -136,5 +141,6 @@ services:
       - "${NGINX_PORT:-8080}:80"
 
 volumes:
+  game-media:
   postgres-data:
   ldap-data:

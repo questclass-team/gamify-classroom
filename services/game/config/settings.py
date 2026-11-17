@@ -180,3 +180,11 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "REDOC_DIST": "https://cdn.jsdelivr.net/npm/redoc@2.1.5",
 }
+
+CORE_BASE_URL = os.environ.get(
+    "CORE_BASE_URL",
+    "http://core:8080",
+)
+
+MEDIA_URL = "/api/game/media/"
+MEDIA_ROOT = BASE_DIR / "media"

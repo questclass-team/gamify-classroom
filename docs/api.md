@@ -124,6 +124,44 @@ Responses:
 - `401 Unauthorized` — no valid access token;
 - `403 Forbidden` — authenticated user does not have the teacher role.
 
+### Group game configuration
+
+Game configuration endpoints require a valid teacher JWT. Game verifies that the group exists and belongs to the
+teacher through Core; Game stores only the external `group_id`.
+
+#### `GET /api/game/groups/{groupId}/config`
+
+Returns the saved configuration, or the defaults when the group has not been configured yet:
+
+```json
+{
+  "currencyName": "Punkty",
+  "currencyIconUrl": null,
+  "ranks": [
+    { "name": "Nowicjusz", "threshold": 0 },
+    { "name": "Giermek", "threshold": 100 }
+  ]
+}
+```
+
+#### `PUT /api/game/groups/{groupId}/config`
+
+Accepts the same configuration shape. Currency names are limited to 30 characters, rank names to 40 characters,
+and a group can contain at most 20 ranks. Thresholds are unique integers from 0 to 1,000,000. The response is
+sorted by threshold.
+
+#### `PUT /api/game/groups/{groupId}/config/currency-icon`
+
+Accepts `multipart/form-data` with the `file` field. PNG, GIF and WebP files up to 256 KB are accepted. The response
+contains `currencyIconUrl`.
+
+#### `DELETE /api/game/groups/{groupId}/config/currency-icon`
+
+Removes the icon and returns `204 No Content`.
+
+These endpoints return `400` for invalid configuration or files, `401` for an invalid token, `403` for a non-teacher,
+`404` for a missing/foreign group and `503` when Core cannot be reached.
+
 ## Local API documentation
 
 After starting Docker Compose, open:

@@ -11,7 +11,7 @@ def test_configuration_has_default_currency_name():
     )
 
     assert configuration.currency_name == "Punkty"
-    assert configuration.currency_icon_url is None
+    assert not configuration.currency_icon
 
 
 @pytest.mark.django_db
