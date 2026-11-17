@@ -113,7 +113,7 @@ namespace QuestClass.Core.Features.Users.Import
                 created.Add(new ImportedUser(
                     candidate.Line,
                     user.Login,
-                    $"{user.FirstName} {user.LastName}",
+                    user.DisplayName,
                     user.Role.ToApiName()));
             }
 

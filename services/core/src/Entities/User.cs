@@ -26,6 +26,9 @@ namespace QuestClass.Core.Entities
 
         public required string LastName { get; set; }
 
+        /// <summary>"First Last", as the API shows the user. Not stored.</summary>
+        public string DisplayName => $"{FirstName} {LastName}".Trim();
+
         public Role Role { get; set; }
 
         public required DateTimeOffset CreatedAt { get; init; }
