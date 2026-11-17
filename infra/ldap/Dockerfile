@@ -1,6 +1,8 @@
 # Test OpenLDAP directory standing in for the faculty LABS domain. Development only.
 FROM alpine:3.22
 
+# Not pinned: Alpine drops old package versions, so pins break the build. Dependabot bumps the base image.
+# hadolint ignore=DL3018
 RUN apk add --no-cache openldap openldap-back-mdb openldap-clients \
     && install -d -o ldap -g ldap /run/openldap /var/lib/openldap/openldap-data
 
@@ -11,4 +13,4 @@ EXPOSE 389
 ENTRYPOINT ["/bin/sh", "/etc/openldap/entrypoint.sh"]
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=10 \
-    CMD ldapsearch -x -H ldap://127.0.0.1 -b "$LDAP_BASE_DN" -s base -LLL dn > /dev/null || exit 1
+    CMD ["sh", "-c", "ldapsearch -x -H ldap://127.0.0.1 -b \"$LDAP_BASE_DN\" -s base -LLL dn > /dev/null || exit 1"]

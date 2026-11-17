@@ -1,7 +1,7 @@
-# Weekly PRs that bump the commit pins of the GitHub Actions in .github/workflows.
-# npm and NuGet are left to the frontend and core owners.
+# Weekly PRs that bump pinned versions. npm and NuGet are left to the frontend and core owners.
 version: 2
 updates:
+  # Commit pins of the GitHub Actions in .github/workflows.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -11,3 +11,30 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: "chore(ci)"
+
+  # Base images of the infra Dockerfiles (alpine, node, nginx).
+  # Major versions are a deliberate team decision (e.g. node 25 is not an LTS), so only minor/patch here.
+  - package-ecosystem: docker
+    directories: ["/infra/ldap", "/infra/nginx"]
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      infra-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(infra)"
+
+  # Images used directly in docker-compose.yml (postgres).
+  # Never a major bump: a new PostgreSQL major cannot read the old data volume without a dump/restore.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore(infra)"

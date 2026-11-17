@@ -27,6 +27,8 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       core: ${{ steps.filter.outputs.core }}
       game: ${{ steps.filter.outputs.game }}
+      infra: ${{ steps.filter.outputs.infra }}
+      compose: ${{ steps.filter.outputs.compose }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,10 +48,11 @@ jobs:
             printf 'Changed files:\n%s\n' "$changed"
             if grep -q '^\.github/workflows/' <<< "$changed"; then run_all=true; fi
           fi
-          for area in frontend:frontend/ core:services/core/ game:services/game/; do
+          infra_paths='infra/|docker-compose\.yml$|\.env\.example$|\.dockerignore$'
+          for area in frontend:frontend/ core:services/core/ game:services/game/ "infra:$infra_paths"; do
             name=${area%%:*}
             path=${area#*:}
-            if [ "$run_all" = true ] || grep -q "^$path" <<< "$changed"; then
+            if [ "$run_all" = true ] || grep -Eq "^($path)" <<< "$changed"; then
               result=true
             else
               result=false
@@ -57,7 +60,14 @@ jobs:
             # The game service has no code yet: its job starts once the project exists.
             if [ "$name" = game ] && [ ! -f services/game/pyproject.toml ]; then result=false; fi
             echo "$name=$result" >> "$GITHUB_OUTPUT"
+            declare "changed_$name=$result"
           done
+          # The stack builds the frontend into nginx and runs core's migrations against PostgreSQL.
+          if [ "$changed_infra" = true ] || [ "$changed_frontend" = true ] || [ "$changed_core" = true ]; then
+            echo "compose=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "compose=false" >> "$GITHUB_OUTPUT"
+          fi
 
   frontend:
     name: Frontend
@@ -100,8 +110,12 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet restore
+      - run: dotnet tool restore
       - run: dotnet format --verify-no-changes --no-restore
       - run: dotnet build --no-restore --configuration Release
+      # Fails when an entity or configuration change has no migration.
+      - run: dotnet ef migrations has-pending-model-changes --project src --no-build --configuration Release
+      # Integration tests start PostgreSQL with Testcontainers (Docker is preinstalled on the runner).
       - run: dotnet test --no-build --configuration Release
 
   game:
@@ -127,6 +141,60 @@ jobs:
       - run: uv run --frozen ruff check .
       - run: uv run --frozen ruff format --check .
       - run: uv run --frozen pytest
+
+  infra-lint:
+    name: Infra lint
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HADOLINT_IMAGE: hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d
+      SHELLCHECK_IMAGE: koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: hadolint (Dockerfiles)
+        run: |
+          for file in infra/*/Dockerfile; do
+            echo "== $file"
+            docker run --rm -i "$HADOLINT_IMAGE" < "$file"
+          done
+      - name: shellcheck (shell scripts)
+        run: |
+          mapfile -t scripts < <(find infra -name '*.sh')
+          docker run --rm -v "$PWD:/mnt" -w /mnt "$SHELLCHECK_IMAGE" "${scripts[@]}"
+
+  compose:
+    name: Compose stack
+    needs: changes
+    if: needs.changes.outputs.compose == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - run: cp .env.example .env
+      - run: docker compose up --build --wait --wait-timeout 300
+      - run: infra/smoke-test.sh
+      # Core's migrations must work with the init script's permissions (core_user owns only schema core).
+      - name: Apply core migrations as core_user
+        working-directory: services/core
+        run: |
+          set -a; . ../../.env; set +a
+          dotnet tool restore
+          export ConnectionStrings__Core="Host=127.0.0.1;Port=$POSTGRES_PORT;Database=$POSTGRES_DB;Username=core_user;Password=$CORE_DB_PASSWORD"
+          dotnet ef database update --project src
+      - name: Container logs
+        if: failure()
+        run: docker compose ps --all && docker compose logs --no-color
+      - if: always()
+        run: docker compose down --volumes
 
   secrets:
     name: Secret scan
@@ -160,7 +228,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [changes, frontend, core, game, secrets]
+    needs: [changes, frontend, core, game, infra-lint, compose, secrets]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
