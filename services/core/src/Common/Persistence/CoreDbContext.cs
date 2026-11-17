@@ -18,6 +18,10 @@ namespace QuestClass.Core.Common.Persistence
 
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+        public DbSet<Group> Groups => Set<Group>();
+
+        public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema(Schema);

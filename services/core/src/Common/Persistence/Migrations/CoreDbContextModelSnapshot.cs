@@ -23,6 +23,71 @@ namespace QuestClass.Core.Common.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("QuestClass.Core.Entities.Group", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("teacher_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_groups");
+
+                    b.HasIndex("TeacherId")
+                        .HasDatabaseName("ix_groups_teacher_id");
+
+                    b.ToTable("groups", "core", t =>
+                        {
+                            t.HasCheckConstraint("ck_groups_name_not_blank", "btrim(name) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("QuestClass.Core.Entities.GroupMember", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.Property<DateTimeOffset>("AddedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("added_at");
+
+                    b.HasKey("GroupId", "StudentId")
+                        .HasName("pk_group_members");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("ix_group_members_student_id");
+
+                    b.ToTable("group_members", "core");
+                });
+
             modelBuilder.Entity("QuestClass.Core.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -135,6 +200,33 @@ namespace QuestClass.Core.Common.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_users_role", "role IN ('student', 'teacher', 'admin')");
                         });
+                });
+
+            modelBuilder.Entity("QuestClass.Core.Entities.Group", b =>
+                {
+                    b.HasOne("QuestClass.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_groups_users_teacher_id");
+                });
+
+            modelBuilder.Entity("QuestClass.Core.Entities.GroupMember", b =>
+                {
+                    b.HasOne("QuestClass.Core.Entities.Group", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_group_members_groups_group_id");
+
+                    b.HasOne("QuestClass.Core.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_group_members_users_student_id");
                 });
 
             modelBuilder.Entity("QuestClass.Core.Entities.RefreshToken", b =>

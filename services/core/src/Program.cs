@@ -230,6 +230,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IGroupRepository, GroupRepository>();
 
 // Health Checks
 builder.Services

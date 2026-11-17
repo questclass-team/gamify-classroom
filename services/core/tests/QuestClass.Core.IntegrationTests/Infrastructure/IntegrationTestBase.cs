@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
+using QuestClass.Core.Common.Persistence;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Auth.Shared.Tokens;
 using QuestClass.Core.Repositories;
@@ -62,6 +64,49 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
             return user;
         }
 
+        /// <summary>A group of the teacher, saved directly instead of through the API.</summary>
+        protected async Task<Group> AddGroupAsync(User teacher, string name = "Grupa testowa")
+        {
+            var group = new Group
+            {
+                Name = name,
+                TeacherId = teacher.Id,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            using var scope = CreateScope();
+            await scope.ServiceProvider.GetRequiredService<IGroupRepository>().AddAsync(group);
+
+            return group;
+        }
+
+        /// <summary>Puts the student into the group directly in the database.</summary>
+        protected async Task AddGroupMemberAsync(Group group, User student, DateTimeOffset? addedAt = null)
+        {
+            using var scope = CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            dbContext.GroupMembers.Add(new GroupMember
+            {
+                GroupId = group.Id,
+                StudentId = student.Id,
+                AddedAt = addedAt ?? DateTimeOffset.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        /// <summary>Soft-deletes the row (the SoftDelete interceptor turns Remove into an UPDATE).</summary>
+        protected async Task SoftDeleteAsync<TEntity>(TEntity entity)
+            where TEntity : class
+        {
+            using var scope = CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            dbContext.Remove(entity);
+            await dbContext.SaveChangesAsync();
+        }
+
         /// <summary>A valid access token for the user, without going through the login endpoint.</summary>
         protected string IssueTokenFor(User user)
         {
@@ -71,6 +116,20 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
         protected static void UseToken(HttpRequestMessage request, string token)
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        /// <summary>Sends the request with an access token of <paramref name="caller"/>; <paramref name="json"/> is the body.</summary>
+        protected Task<HttpResponseMessage> SendAsAsync(User caller, HttpMethod method, string url, object? json = null)
+        {
+            var request = new HttpRequestMessage(method, url);
+
+            if (json is not null)
+            {
+                request.Content = JsonContent.Create(json);
+            }
+
+            UseToken(request, IssueTokenFor(caller));
+            return Client.SendAsync(request);
         }
     }
 }
