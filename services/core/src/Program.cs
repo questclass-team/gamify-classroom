@@ -71,11 +71,15 @@ builder.Services
 
 builder.Services.AddSingleton<IValidateOptions<DatabaseOptions>, DatabaseOptionsValidator>();
 
+builder.Services.AddSingleton<SoftDeleteInterceptor>();
+
 builder.Services.AddDbContext<CoreDbContext>((serviceProvider, options) =>
 {
     var databaseOptions = serviceProvider
         .GetRequiredService<IOptions<DatabaseOptions>>()
         .Value;
+
+    options.AddInterceptors(serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
 
     options.UseNpgsql(
         databaseOptions.Core,
