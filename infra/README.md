@@ -68,10 +68,27 @@ Core's migrations are applied manually: `dotnet ef database update --project src
 CI applies them the same way against the Compose database, so a migration that needs more than
 `core_user`'s rights fails there.
 
-## Adding the core or game service
+## Game service
 
-nginx already routes to them. Keep `condition: service_healthy`: a plain `depends_on` only waits for the
-container to start, not for PostgreSQL to accept connections. Add a block like this to `docker-compose.yml` (core shown; game listens on `8000`):
+The Game service is included in the Compose stack and listens on port `8000`
+inside the Compose network. It depends on a healthy PostgreSQL container and
+connects as `game_user` to the `game` schema. It is reached through nginx at
+`/api/game/`.
+
+```sh
+docker compose up -d --build game
+./services/game/scripts/manage.sh migrate
+```
+
+The service uses `DB_HOST=postgres`, `DB_PORT=5432`, `DB_USER=game_user` and
+`GAME_DB_PASSWORD` from `.env`. Do not use the administrator `postgres` role
+from an application container.
+
+## Adding the Core service
+
+nginx already routes to Core. Keep `condition: service_healthy`: a plain
+`depends_on` only waits for the container to start, not for PostgreSQL to
+accept connections. Add a block like this to `docker-compose.yml`:
 
 ```yaml
   core:
@@ -81,6 +98,7 @@ container to start, not for PostgreSQL to accept connections. Add a block like t
       ConnectionStrings__Core: Host=postgres;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD}
       Ldap__Host: ldap
       Ldap__BaseDn: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
+      Jwt__Secret: ${JWT_SECRET:?set JWT_SECRET in .env}
     depends_on:
       core-migrate:
         condition: service_completed_successfully

@@ -131,6 +131,9 @@ cp .env.example .env
 > [!CAUTION]
 > Never commit `.env`, passwords, keys or real student data. Use only the dummy values from `.env.example` for development.
 
+Core and Game share the `JWT_SECRET` environment variable. It is used by Core
+to issue HS256 access tokens and by Game to validate them.
+
 ## 2. Run the stack
 
 ```sh
@@ -142,8 +145,10 @@ The first build takes a few minutes. When all containers are healthy, open:
 | Service | URL |
 |---|---|
 | 🖥️ Frontend | http://localhost:8080 |
-| 🟦 Core API docs | http://localhost:8080/api/core/swagger |
 | 🟩 Game API docs | http://localhost:8080/api/game/docs |
+
+The Core container is not part of the current Compose stack yet, so its
+Swagger URL becomes available after the Core service is added.
 
 ## 3. Log in
 
@@ -167,9 +172,10 @@ These accounts exist only in the local test directory. In production, users log 
 | Stop the stack | `docker compose down` |
 | Reset the database and LDAP | `docker compose down -v` |
 | View logs of one service | `docker compose logs -f game` |
-| Apply game service migrations | `docker compose exec game python manage.py migrate` |
-| Run core tests | `docker compose exec core dotnet test` |
-| Run game tests | `docker compose exec game pytest` |
+| Apply game service migrations | `./services/game/scripts/manage.sh migrate` |
+| Run core tests | `dotnet test services/core/QuestClass.Core.slnx` |
+| Run game checks | `./services/game/scripts/manage.sh check` |
+| Run game tests | `cd services/game && uv run pytest` |
 | Run frontend tests | `cd frontend && npm test` (the frontend is built into the nginx image) |
 
 ## 5. Update to the latest version
@@ -203,7 +209,7 @@ dotnet run --project src
 </details>
 
 <details>
-<summary><b>🟩 Game service</b> — Python 3.13 + uv</summary>
+<summary><b>🟩 Game service</b> — Python 3.12 + uv</summary>
 
 ```sh
 cd services/game
