@@ -14,5 +14,13 @@ namespace QuestClass.Core.Features.Groups.Shared
                 "Groups.NotFound",
                 "The group does not exist or belongs to another teacher.");
         }
+
+        /// <summary>Only imported student accounts can join a group: not teachers, admins or deleted accounts.</summary>
+        public static Error StudentNotFound()
+        {
+            return Error.NotFound(
+                "Groups.StudentNotFound",
+                "No student account with this id exists.");
+        }
     }
 }
