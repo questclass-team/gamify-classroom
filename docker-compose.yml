@@ -1,0 +1,67 @@
+# QuestClass development stack. Usage: cp .env.example .env && docker compose up --build
+# Adding the core or game service: see infra/README.md.
+name: questclass
+
+# Shared by every service (`<<: *defaults`); new services should use it too.
+x-defaults: &defaults
+  restart: unless-stopped
+  # Processes cannot gain privileges (e.g. through setuid binaries) after start.
+  security_opt:
+    - no-new-privileges:true
+  # Docker keeps logs forever by default; a crash loop could fill the disk.
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *defaults
+    image: postgres:18-alpine
+    # Default is 10 s before SIGKILL; a killed PostgreSQL has to run crash recovery on next start.
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-questclass}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}
+      GAME_DB_PASSWORD: ${GAME_DB_PASSWORD:?set GAME_DB_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      # Over TCP on purpose: while init scripts run, a temporary server answers on the Unix socket
+      # only and is then restarted, so a socket check reports "ready" too early.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+
+  ldap:
+    <<: *defaults
+    build: infra/ldap
+    environment:
+      LDAP_BASE_DN: ${LDAP_BASE_DN:-dc=labs,dc=questclass,dc=test}
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD:?set LDAP_ADMIN_PASSWORD in .env}
+      LDAP_TEST_USER_PASSWORD: ${LDAP_TEST_USER_PASSWORD:-haslo}
+    volumes:
+      - ldap-data:/var/lib/openldap/openldap-data
+    ports:
+      - "127.0.0.1:${LDAP_PORT:-389}:389"
+
+  nginx:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+
+volumes:
+  postgres-data:
+  ldap-data:

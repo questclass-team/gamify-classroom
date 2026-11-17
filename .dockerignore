@@ -1,0 +1,12 @@
+# Build context of images built from the repository root (infra/nginx).
+.git
+**/node_modules
+**/dist
+**/bin
+**/obj
+**/.venv
+**/__pycache__
+**/.env
+**/.env.*
+!**/.env.example
+docs
