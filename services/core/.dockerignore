@@ -1,0 +1,6 @@
+# Build context of services/core/Dockerfile: only src/ and the SDK/tool manifests are needed.
+**/bin
+**/obj
+**/.vs
+**/*.user
+tests
