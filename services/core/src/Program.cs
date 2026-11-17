@@ -144,6 +144,13 @@ builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>
 builder.Services.AddSingleton<IJwtTokenIssuer, JwtTokenIssuer>();
 
 builder.Services
+    .AddOptions<RefreshTokenOptions>()
+    .BindConfiguration(RefreshTokenOptions.SectionName)
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IValidateOptions<RefreshTokenOptions>, RefreshTokenOptionsValidator>();
+
+builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -214,6 +221,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Health Checks
 builder.Services
