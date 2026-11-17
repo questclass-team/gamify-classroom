@@ -91,15 +91,18 @@ Migration files are generated code: do not edit them by hand and do not reformat
 QuestClass.Core.slnx
 src/                        QuestClass.Core (web API)
   Common/
-    Api/                    ApiControllerBase, ValidationFilter, GlobalExceptionHandler
+    Api/                    ApiControllerBase, ValidationFilter, GlobalExceptionHandler, AddApi()
     Configuration/          options classes and their validators
-    Persistence/            CoreDbContext, entity configurations, soft delete
+    Persistence/            CoreDbContext, entity configurations, soft delete, AddPersistence()
     Results/                Result, Error, ErrorType
   Entities/                 database entities (User, Role, ...)
   Repositories/             IXxxRepository + EF Core implementation
-  Features/<Feature>/<Use case>/
-                            one folder per endpoint: XxxEndpoint, XxxRequest, XxxHandler, XxxValidator
-  Program.cs
+  Features/<Feature>/
+    <Use case>/             one folder per endpoint: XxxEndpoint, XxxRequest, XxxHandler, XxxValidator
+    Shared/                 code used by several use cases of the feature
+    <Feature>ServiceCollectionExtensions.cs
+                            Add<Feature>Feature(): registers the feature's handlers and services
+  Program.cs                logging, the Add...() calls and the HTTP pipeline only
 tests/
   QuestClass.Core.UnitTests/
   QuestClass.Core.IntegrationTests/
@@ -111,6 +114,8 @@ The service uses **vertical slices**: everything one endpoint needs lives in its
 ## Conventions
 
 - **One controller class per endpoint**, derived from `ApiControllerBase` (e.g. `LoginEndpoint`).
+- **Registration:** a new handler is registered in its feature's `<Feature>ServiceCollectionExtensions`, a new
+  repository in `AddPersistence()`; a new feature adds one `Add<Feature>Feature()` call to `Program.cs`.
 - **Handlers** return `Result` / `Result<T>` instead of throwing for expected failures. The endpoint calls
   `HandleFailure(result)`, which maps `ErrorType` to the HTTP status:
 
