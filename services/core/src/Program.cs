@@ -8,6 +8,7 @@ using Microsoft.OpenApi;
 using QuestClass.Core.Common.Api;
 using QuestClass.Core.Common.Configuration;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Repositories;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -81,17 +82,23 @@ builder.Services.AddDbContext<CoreDbContext>((serviceProvider, options) =>
 
     options.AddInterceptors(serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
 
-    options.UseNpgsql(
-        databaseOptions.Core,
-        npgsqlOptions =>
-        {
-            npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", CoreDbContext.Schema);
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(2),
-                errorCodesToAdd: null);
-        });
+    options
+        .UseNpgsql(
+            databaseOptions.Core,
+            npgsqlOptions =>
+            {
+                npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", CoreDbContext.Schema);
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(2),
+                    errorCodesToAdd: null);
+            })
+        // Tables and columns as PostgreSQL expects them: users.first_name, not "Users"."FirstName".
+        .UseSnakeCaseNamingConvention();
 });
+
+// Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Health Checks
 builder.Services

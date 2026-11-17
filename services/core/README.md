@@ -49,7 +49,11 @@ QuestClass.Core.slnx
 src/                        QuestClass.Core (web API)
   Common/
     Api/                    ApiControllerBase, ValidationFilter, GlobalExceptionHandler
+    Configuration/          options classes and their validators
+    Persistence/            CoreDbContext, entity configurations, soft delete
     Results/                Result, Error, ErrorType
+  Entities/                 database entities (User, Role, ...)
+  Repositories/             IXxxRepository + EF Core implementation
   Features/<Feature>/<Use case>/
                             one folder per endpoint: XxxEndpoint, XxxRequest, XxxHandler, XxxValidator
   Program.cs
@@ -80,6 +84,12 @@ The service uses **vertical slices**: everything one endpoint needs lives in its
 - **Every error** is returned as RFC 9457 problem details (`application/problem+json`) with `title`,
   `status`, `detail`, `instance` and `traceId`. Unhandled exceptions become a generic 500 without
   internal details.
+- **Database access** goes through repositories only; handlers never use `CoreDbContext` directly.
+- **Soft delete:** an entity that implements `ISoftDeletable` is never physically deleted. `Remove` +
+  `SaveChanges` only marks it, and it is hidden from all queries by the `SoftDelete` query filter
+  (`IgnoreQueryFilters([QueryFilters.SoftDelete])` to see it). Never use `ExecuteDelete` on such entities:
+  it bypasses the soft delete interceptor.
+- Tables and columns use `snake_case` (`core.users.first_name`).
 - Code style is enforced by `.editorconfig` (block-scoped namespaces, braces, `_camelCase` private fields).
 
 ## Behind nginx

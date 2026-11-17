@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using QuestClass.Core.Entities;
 
 namespace QuestClass.Core.Common.Persistence
 {
@@ -12,6 +13,8 @@ namespace QuestClass.Core.Common.Persistence
             : base(options)
         {
         }
+
+        public DbSet<User> Users => Set<User>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
