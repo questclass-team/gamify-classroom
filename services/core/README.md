@@ -152,6 +152,8 @@ a required setting is missing or invalid.
 | `Jwt__AccessTokenLifetimeMinutes` | no (15), at most 480 | |
 | `Bootstrap__AdminLogins` | no (none) | `admin` — comma-separated logins that become admins on their first login |
 | `RateLimiting__LoginPermitsPerMinute` | no (20) | login attempts per client IP per minute |
+| `RefreshToken__SessionLifetimeHours` | no (8), 1–8 | how long a login session lasts; refreshing does not extend it |
+| `RefreshToken__ReuseGracePeriodSeconds` | no (30), 0–300 | a just-rotated cookie arriving again within this time is not treated as theft |
 
 ## Authentication
 
@@ -167,7 +169,8 @@ a required setting is missing or invalid.
 1. The LDAP directory checks the password (it is never stored). Wrong password or unknown login → `401`.
 2. Only accounts imported from CSV may log in. Valid in LDAP but not imported → `403`.
 3. First and last name are refreshed from LDAP on every login; the role always comes from the database.
-4. Returns `{ accessToken, user: { id, login, displayName, role } }`.
+4. Returns `{ accessToken, user: { id, login, displayName, role } }` and starts a session: sets the refresh
+   cookie (see below), valid for `RefreshToken__SessionLifetimeHours` (8 h).
 
 **First admin.** Accounts are created only by CSV import, which needs an admin. A login listed in
 `Bootstrap__AdminLogins` that passes LDAP and has never existed in the database is created as an admin on
@@ -175,5 +178,27 @@ its first login (locally: `admin` / `haslo`). A deleted account is never recreat
 
 **Rate limit.** Login attempts are limited per client IP (`429` when exceeded). Behind nginx the client IP
 is taken from `X-Forwarded-For`.
+
+### Session: refresh token (`POST /api/core/auth/refresh`, `POST /api/core/auth/logout`)
+
+The access token lives 15 minutes; the session lives up to 8 hours thanks to a refresh token.
+
+- **Where it is.** Only in the cookie `qc_refresh`: `HttpOnly` (JavaScript cannot read it, so XSS cannot steal
+  it), `Secure`, `SameSite=Strict`, `Path=/api/core/auth` (the browser sends it to the auth endpoints only).
+  Browsers treat `http://localhost` as secure, so it also works locally. The database stores only its
+  SHA-256 hash.
+- **Refresh.** `POST /api/core/auth/refresh` with no body and no `Authorization` header (the browser sends the
+  cookie) returns `{ accessToken, user }` like login and replaces the cookie (**rotation**). The user is read
+  from the database again, so a changed role or a deleted account takes effect at the next refresh.
+  Refreshing never moves the end of the session.
+- **Theft detection.** A rotated cookie that comes back means someone has a copy: every session of that user
+  ends (`401`). Exception: within `ReuseGracePeriodSeconds` (30 s) of the rotation it is two tabs refreshing
+  at once, so it gets a new access token and the cookie is left alone.
+- **Failure.** Missing, unknown, expired, logged-out or reused cookie → `401` `Auth.InvalidRefreshToken`, and
+  the cookie is removed. The frontend then shows the login page.
+- **Logout.** `POST /api/core/auth/logout` revokes the cookie's session and removes the cookie (`204`). It needs
+  no access token and can be called twice. Other sessions of the user (other devices) stay.
+
+In Swagger UI: log in, then call refresh or logout directly; the browser sends the cookie by itself.
 
 All tables of the service, including the EF Core migrations history, live in the `core` PostgreSQL schema.

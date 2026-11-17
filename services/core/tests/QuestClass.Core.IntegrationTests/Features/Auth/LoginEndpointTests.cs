@@ -39,6 +39,33 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
         }
 
         [Fact]
+        public async Task Login_ShouldSetHttpOnlySecureRefreshCookieForAuthEndpointsOnly()
+        {
+            await AddUserAsync("student");
+
+            var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "student", password = "haslo" });
+
+            var cookie = SessionClient.FindRefreshCookie(response).ShouldNotBeNull();
+            cookie.HttpOnly.ShouldBeTrue();
+            cookie.Secure.ShouldBeTrue();
+            cookie.SameSite.ShouldBe(Microsoft.Net.Http.Headers.SameSiteMode.Strict);
+            cookie.Path.ToString().ShouldBe("/api/core/auth");
+            cookie.Expires!.Value.ShouldBe(DateTimeOffset.UtcNow.AddHours(8), TimeSpan.FromMinutes(1));
+
+            // The token is only in the cookie, never in the body that JavaScript can read.
+            (await response.Content.ReadAsStringAsync()).ShouldNotContain(cookie.Value.ToString());
+        }
+
+        [Fact]
+        public async Task Login_WhenRejected_ShouldNotSetARefreshCookie()
+        {
+            var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "nowy", password = "haslo" });
+
+            response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            SessionClient.FindRefreshCookie(response).ShouldBeNull();
+        }
+
+        [Fact]
         public async Task Login_ShouldRefreshNamesFromDirectoryAndRecordLoginTime()
         {
             var user = await AddUserAsync("mwisniewski", Role.Teacher, "Marek", "Wisniewski");
