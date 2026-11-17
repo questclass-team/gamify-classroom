@@ -19,7 +19,14 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) an
 
    Later just `docker start questclass-postgres`.
 
-2. Run the API from `services/core`:
+2. Create or update the database tables (migrations are never applied automatically on startup):
+
+   ```sh
+   dotnet tool restore
+   dotnet ef database update --project src
+   ```
+
+3. Run the API from `services/core`:
 
    ```sh
    dotnet run --project src
@@ -41,6 +48,19 @@ dotnet format                              # fix code style
 ```
 
 Integration tests start the whole API in memory with `WebApplicationFactory`; nothing else has to run.
+
+## Database migrations
+
+`dotnet-ef` is pinned in `dotnet-tools.json`; run `dotnet tool restore` once. From `services/core`:
+
+| Task | Command |
+|---|---|
+| Add a migration after changing entities or configurations | `dotnet ef migrations add <Name> --project src --output-dir Common/Persistence/Migrations` |
+| Apply migrations to the database from `ConnectionStrings:Core` | `dotnet ef database update --project src` |
+| Check that no model change is missing a migration (CI) | `dotnet ef migrations has-pending-model-changes --project src` |
+| SQL script for a database administrator | `dotnet ef migrations script --project src --idempotent` |
+
+Migration files are generated code: do not edit them by hand and do not reformat them.
 
 ## Structure
 
