@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Login;
+using QuestClass.Core.Features.Auth.Shared;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using QuestClass.Core.Repositories;
 using Shouldly;
@@ -28,7 +28,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "nauczyciel", password = "haslo" });
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.Id.ShouldBe(user.Id);
             body.User.Login.ShouldBe("nauczyciel");
             body.User.Role.ShouldBe("teacher");
@@ -45,7 +45,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
 
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "mwisniewski", password = "haslo" });
 
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.DisplayName.ShouldBe("Marek Wiśniewski");
 
             using var scope = CreateScope();
@@ -99,7 +99,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Auth
             var response = await Client.PostAsJsonAsync(LoginUrl, new { login = "admin", password = "haslo" });
 
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            var body = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+            var body = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
             body.User.Role.ShouldBe("admin");
             body.User.DisplayName.ShouldBe("Anna Administratorka");
 
