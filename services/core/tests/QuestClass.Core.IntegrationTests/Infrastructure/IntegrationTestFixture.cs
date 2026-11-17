@@ -14,7 +14,8 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
     /// </summary>
     public sealed class IntegrationTestFixture : IAsyncLifetime
     {
-        private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
+        // Same major version as docker-compose.yml.
+        private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18-alpine")
             .Build();
 
         private Respawner _respawner = null!;
