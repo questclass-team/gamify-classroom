@@ -42,6 +42,13 @@ def test_missing_token_returns_401(api_client) -> None:
     assert response.status_code == 401
 
 
+def test_unknown_api_route_returns_json_404(api_client) -> None:
+    response = api_client.get("/api/game/unknown/")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Not found."}
+
+
 def test_invalid_signature_returns_401(
     api_client,
     token_factory,

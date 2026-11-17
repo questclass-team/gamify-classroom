@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
-from django.conf import settings
 import jwt
 import pytest
+from django.conf import settings
 from rest_framework.test import APIClient
 
 
