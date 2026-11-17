@@ -8,7 +8,8 @@ export interface AuthContextValue {
   state: AuthState
   /** Throws ApiError on rejected credentials. */
   login: (credentials: LoginRequest) => Promise<CurrentUser>
-  logout: () => void
+  /** Ends the session on the server and locally. */
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

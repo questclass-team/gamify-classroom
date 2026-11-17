@@ -39,9 +39,13 @@ Production builds never include the mocks.
 ## Structure
 
 - `src/api/types.ts` – all request/response types (the proposed API contract for core and game).
-- `src/api/client.ts` – `fetch` wrapper: JWT header, problem-details errors, 401 → logout.
+- `src/api/client.ts` – `fetch` wrapper: JWT header, problem-details errors. On 401 it refreshes the
+  access token once (`POST /api/core/auth/refresh`, the HttpOnly cookie is sent by the browser) and
+  repeats the request; parallel 401s share one refresh. Only a failed refresh logs the user out.
 - `src/api/useApiData.ts` – load-on-mount hook with abort, retry and local updates.
-- `src/auth/` – session (JWT in `sessionStorage`), `AuthProvider`, role guards.
+- `src/auth/` – session (access token in `sessionStorage`, refresh token only in the HttpOnly cookie),
+  `AuthProvider` (renews the token 30 s before it expires, restores the session in a new tab from the
+  cookie, logout also ends the session on the server), role guards.
 - `src/mocks/` – MSW handlers and mock data, dev only.
 - `src/styles/global.css` – Tailwind v4 `@theme` tokens (palette, fonts, radius, shadow) and the
   few component styles that are clearer as CSS (`.data-table`, breadcrumbs, `<dialog>`). The

@@ -31,6 +31,15 @@ export interface LoginResponse {
 // GET /api/core/auth/me -> CurrentUser
 
 /**
+ * Login also sets the HttpOnly cookie `qc_refresh` (JavaScript never sees it; the session lasts at most 8 h).
+ *
+ * POST /api/core/auth/refresh (no body, no Authorization header; the browser sends the cookie)
+ *   -> 200 RefreshResponse and usually a new cookie; 401 when the session is over (log in again).
+ * POST /api/core/auth/logout -> 204; ends the session and removes the cookie.
+ */
+export type RefreshResponse = LoginResponse
+
+/**
  * CSV accepted by POST /api/core/admin/users/import (multipart field `file`, admin only).
  * First line is the header; `,` or `;` as delimiter; role is one of `Role`.
  */
