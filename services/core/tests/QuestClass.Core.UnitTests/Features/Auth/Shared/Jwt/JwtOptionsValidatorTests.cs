@@ -1,7 +1,7 @@
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.Jwt;
 using Shouldly;
 
-namespace QuestClass.Core.UnitTests.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.UnitTests.Features.Auth.Shared.Jwt
 {
     public sealed class JwtOptionsValidatorTests
     {

@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.Features.Auth.Shared.Jwt
 {
     /// <summary>
     /// Access token settings. The game service validates the same tokens, so <see cref="Secret"/>,

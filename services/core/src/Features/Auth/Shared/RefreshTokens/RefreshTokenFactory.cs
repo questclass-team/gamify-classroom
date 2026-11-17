@@ -1,6 +1,6 @@
 using QuestClass.Core.Entities;
 
-namespace QuestClass.Core.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.Features.Auth.Shared.RefreshTokens
 {
     public static class RefreshTokenFactory
     {

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using QuestClass.Core.Entities;
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 using QuestClass.Core.IntegrationTests.Infrastructure;
 using QuestClass.Core.Repositories;
 using Shouldly;

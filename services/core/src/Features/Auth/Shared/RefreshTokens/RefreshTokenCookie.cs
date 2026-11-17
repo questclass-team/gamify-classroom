@@ -1,4 +1,4 @@
-namespace QuestClass.Core.Features.Auth.Shared.Tokens
+namespace QuestClass.Core.Features.Auth.Shared.RefreshTokens
 {
     /// <summary>
     /// The refresh token lives only in this cookie: HttpOnly (JavaScript cannot read it, so XSS cannot steal it),

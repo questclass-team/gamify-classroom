@@ -1,4 +1,4 @@
-using QuestClass.Core.Features.Auth.Shared.Tokens;
+using QuestClass.Core.Features.Auth.Shared.RefreshTokens;
 
 namespace QuestClass.Core.Features.Auth.Shared
 {
