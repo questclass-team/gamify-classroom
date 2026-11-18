@@ -8,10 +8,11 @@ Owners: Piotr, Artem, Mykyta.
 From the repository root:
 
 ```sh
-docker compose up -d --build
-./services/game/scripts/manage.sh migrate
+docker compose up -d --build --wait
 ./services/game/scripts/manage.sh check
 ```
+
+Game migrations run automatically in the one-shot `game-migrate` Compose service before `game` starts.
 
 The service listens on port `8000` inside the Compose network and is exposed
 through nginx at:
@@ -31,6 +32,7 @@ Run Django commands from the repository root with:
 ```sh
 ./services/game/scripts/manage.sh check
 ./services/game/scripts/manage.sh migrate
+./services/game/scripts/manage.sh migrate --check
 ```
 
 The script passes all arguments to `uv run python manage.py` inside a temporary

@@ -71,14 +71,12 @@ than `core_user`'s rights fails.
 ## Game service
 
 The Game service is included in the Compose stack and listens on port `8000`
-inside the Compose network. It depends on a healthy PostgreSQL container and
-connects as `game_user` to the `game` schema. It is reached through nginx at
-`/api/game/`.
+inside the Compose network. It connects as `game_user` to the `game` schema and
+is reached through nginx at `/api/game/`.
 
-```sh
-docker compose up -d --build game
-./services/game/scripts/manage.sh migrate
-```
+`game-migrate` is a one-shot service that waits for PostgreSQL, applies Django
+migrations as `game_user`, and exits. `game` starts only after it completes
+successfully, so `docker compose up --build` applies Game migrations automatically.
 
 The service uses `DB_HOST=postgres`, `DB_PORT=5432`, `DB_USER=game_user` and
 `GAME_DB_PASSWORD` from `.env`. Do not use the administrator `postgres` role
