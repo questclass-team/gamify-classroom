@@ -21,6 +21,16 @@ x-defaults: &defaults
 x-core-database: &core-database
   ConnectionStrings__Core: Host=postgres;Port=5432;Database=${POSTGRES_DB:-questclass};Username=core_user;Password=${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env};Gss Encryption Mode=Disable
 
+# Game's database connection, shared by `game` and `game-migrate`. game_user may use schema game only.
+x-game-database: &game-database
+  DB_NAME: ${POSTGRES_DB:-questclass}
+  DB_USER: game_user
+  DB_PASSWORD: ${GAME_DB_PASSWORD:?set GAME_DB_PASSWORD in .env}
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+  CORE_BASE_URL: http://core:8080
+
 services:
   postgres:
     <<: *defaults
@@ -95,23 +105,32 @@ services:
     expose:
       - "8080"
 
+  # One-shot: applies Django migrations, then exits. `game` starts only after it succeeds.
+  game-migrate:
+    <<: *defaults
+    build: services/game
+    working_dir: /app
+    restart: "no"
+    environment:
+      <<: *game-database
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["uv", "run", "--no-dev", "python", "manage.py", "migrate", "--noinput"]
+
   game:
     <<: *defaults
     build: services/game
     working_dir: /app
     environment:
-      DB_NAME: ${POSTGRES_DB:-questclass}
-      DB_USER: game_user
-      DB_PASSWORD: ${GAME_DB_PASSWORD:?set GAME_DB_PASSWORD in .env}
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      CORE_BASE_URL: http://core:8080
+      <<: *game-database
     depends_on:
       postgres:
         condition: service_healthy
       core:
         condition: service_healthy
+      game-migrate:
+        condition: service_completed_successfully
     volumes:
       - game-media:/app/media
     expose:

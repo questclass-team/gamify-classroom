@@ -148,7 +148,8 @@ The first build takes a few minutes. When all containers are healthy, open:
 | 🟦 Core API docs | http://localhost:8080/api/core/swagger |
 | 🟩 Game API docs | http://localhost:8080/api/game/docs |
 
-Core's database migrations are applied automatically on every start (the one-shot `core-migrate` container).
+Core and Game database migrations are applied automatically on every start by the one-shot `core-migrate` and
+`game-migrate` containers.
 
 > [!NOTE]
 > Open the stack on `http://localhost`. The login session cookie is `Secure`, and browsers accept it over plain
@@ -176,7 +177,7 @@ These accounts exist only in the local test directory. In production, users log 
 | Stop the stack | `docker compose down` |
 | Reset the database and LDAP | `docker compose down -v` |
 | View logs of one service | `docker compose logs -f game` |
-| Apply game service migrations | `./services/game/scripts/manage.sh migrate` |
+| Check game migrations | `./services/game/scripts/manage.sh migrate --check` |
 | Run core tests | `dotnet test services/core/QuestClass.Core.slnx` |
 | Run game checks | `./services/game/scripts/manage.sh check` |
 | Run game tests | `cd services/game && uv run pytest` |
