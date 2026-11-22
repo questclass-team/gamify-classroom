@@ -13,11 +13,11 @@ class CoreUnavailable(Exception):
 
 
 class CoreClient:
-    def ensure_group_access(
+    def _get_group(
         self,
         group_id: str,
         authorization: str,
-    ) -> None:
+    ) -> httpx.Response:
         url = (
             f"{settings.CORE_BASE_URL.rstrip('/')}"
             f"/api/core/groups/{quote(group_id, safe='')}"
@@ -32,10 +32,45 @@ class CoreClient:
         except httpx.HTTPError as exc:
             raise CoreUnavailable from exc
 
-        if 200 <= response.status_code < 300:
-            return
-
         if response.status_code in {401, 403, 404}:
             raise CoreGroupNotFound
 
+        if response.is_success:
+            return response
+
         raise CoreUnavailable
+
+    def ensure_group_access(
+        self,
+        group_id: str,
+        authorization: str,
+    ) -> None:
+        self._get_group(
+            group_id=group_id,
+            authorization=authorization,
+        )
+
+    def ensure_student_in_group(
+        self,
+        group_id: str,
+        student_id: str,
+        authorization: str,
+    ) -> None:
+        response = self._get_group(
+            group_id=group_id,
+            authorization=authorization,
+        )
+        try:
+            group = response.json()
+        except ValueError as exc:
+            raise CoreUnavailable from exc
+
+        students = group.get("students") if isinstance(group, dict) else None
+        if not isinstance(students, list):
+            raise CoreUnavailable
+
+        if not any(
+            isinstance(student, dict) and student.get("id") == student_id
+            for student in students
+        ):
+            raise CoreGroupNotFound

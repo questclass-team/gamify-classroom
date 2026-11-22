@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -18,9 +20,18 @@ from .models import (
     Rank,
 )
 from .serializers import (
+    AwardPointsSerializer,
     CurrencyIconResponseSerializer,
     GroupGameConfigSerializer,
+    RewardHistoryItemSerializer,
+    StudentProgressSerializer,
     UpdateGameConfigSerializer,
+)
+from .services import (
+    BalanceLimitError,
+    award_points,
+    get_reward_history,
+    get_student_progress,
 )
 
 
@@ -36,6 +47,25 @@ def ensure_group_access(request: Request, group_id: str) -> None:
         CoreClient().ensure_group_access(group_id, authorization)
     except CoreGroupNotFound as exc:
         raise NotFound("Group not found.") from exc
+    except CoreUnavailable as exc:
+        raise CoreServiceUnavailable from exc
+
+
+def ensure_student_in_group(
+    request: Request,
+    group_id: UUID,
+    student_id: UUID,
+) -> None:
+    authorization = request.headers.get("Authorization", "")
+
+    try:
+        CoreClient().ensure_student_in_group(
+            group_id=str(group_id),
+            student_id=str(student_id),
+            authorization=authorization,
+        )
+    except CoreGroupNotFound as exc:
+        raise NotFound("Group or student not found.") from exc
     except CoreUnavailable as exc:
         raise CoreServiceUnavailable from exc
 
@@ -143,3 +173,92 @@ class CurrencyIconView(APIView):
         if not configuration.currency_icon:
             raise ValidationError("Icon could not be stored.")
         return configuration.currency_icon.url
+
+
+class StudentProgressView(APIView):
+    permission_classes = (IsAuthenticated, IsTeacher)
+
+    @extend_schema(
+        responses=StudentProgressSerializer,
+        summary="Get student's progress",
+    )
+    def get(
+        self,
+        request: Request,
+        group_id: UUID,
+        student_id: UUID,
+    ) -> Response:
+        ensure_student_in_group(request, group_id, student_id)
+
+        progress = get_student_progress(
+            group_id=str(group_id),
+            student_id=str(student_id),
+        )
+
+        serializer = StudentProgressSerializer(progress)
+
+        return Response(serializer.data)
+
+
+class StudentRewardsView(APIView):
+    permission_classes = (IsAuthenticated, IsTeacher)
+    parser_classes = (JSONParser,)
+
+    @extend_schema(
+        responses=RewardHistoryItemSerializer(many=True),
+        summary="Get student's reward history",
+    )
+    def get(
+        self,
+        request: Request,
+        group_id: UUID,
+        student_id: UUID,
+    ) -> Response:
+        ensure_student_in_group(request, group_id, student_id)
+
+        rewards = get_reward_history(
+            group_id=str(group_id),
+            student_id=str(student_id),
+        )
+
+        serializer = RewardHistoryItemSerializer(rewards, many=True)
+
+        return Response(serializer.data)
+
+    @extend_schema(
+        request=AwardPointsSerializer,
+        responses={201: RewardHistoryItemSerializer},
+        summary="Award points to a student",
+    )
+    def post(
+        self,
+        request: Request,
+        group_id: UUID,
+        student_id: UUID,
+    ) -> Response:
+        ensure_student_in_group(request, group_id, student_id)
+
+        serializer = AwardPointsSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            reward = award_points(
+                group_id=str(group_id),
+                student_id=str(student_id),
+                points=serializer.validated_data["points"],
+                reason=serializer.validated_data["reason"],
+                awarded_by=str(request.auth["sub"]),
+            )
+        except BalanceLimitError as exc:
+            raise ValidationError(
+                {"points": "Award would exceed the balance limit."}
+            ) from exc
+
+        response_serializer = RewardHistoryItemSerializer(reward)
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
