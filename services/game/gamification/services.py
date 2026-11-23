@@ -45,7 +45,9 @@ class RankInput(TypedDict):
 
 
 def get_group_game_config(*, group_id: UUID) -> GroupGameConfiguration:
-    configuration, _ = GroupGameConfiguration.objects.get_or_create(group_id=group_id)
+    configuration, _ = GroupGameConfiguration.objects.get_or_create(
+        group_id=str(group_id)
+    )
     return configuration
 
 
@@ -91,14 +93,18 @@ def upload_currency_icon(*, group_id: UUID, uploaded_file: UploadedFile) -> str:
 
 @transaction.atomic
 def delete_currency_icon(*, group_id: UUID) -> None:
-    configuration = GroupGameConfiguration.objects.filter(group_id=group_id).first()
+    configuration = GroupGameConfiguration.objects.filter(
+        group_id=str(group_id)
+    ).first()
     if configuration is not None and configuration.currency_icon:
         configuration.currency_icon.delete(save=True)
 
 
 def calculate_rank(group_id: UUID, balance: int) -> Rank | None:
     return (
-        Rank.objects.filter(configuration__group_id=group_id, threshold__lte=balance)
+        Rank.objects.filter(
+            configuration__group_id=str(group_id), threshold__lte=balance
+        )
         .order_by("-threshold")
         .first()
     )
@@ -110,7 +116,9 @@ def get_student_progress(
     student_id: UUID,
 ) -> dict[str, UUID | int | Rank | None]:
     balance = (
-        StudentProgress.objects.filter(group_id=group_id, student_id=student_id)
+        StudentProgress.objects.filter(
+            group_id=str(group_id), student_id=str(student_id)
+        )
         .values_list("balance", flat=True)
         .first()
     ) or 0
@@ -129,8 +137,8 @@ def get_reward_history(
     student_id: UUID,
 ) -> QuerySet[PointReward]:
     return PointReward.objects.select_related("progress").filter(
-        progress__group_id=group_id,
-        progress__student_id=student_id,
+        progress__group_id=str(group_id),
+        progress__student_id=str(student_id),
     )
 
 
@@ -144,8 +152,8 @@ def award_points(
     awarded_by: str,
 ) -> PointReward:
     progress, _ = StudentProgress.objects.select_for_update().get_or_create(
-        group_id=group_id,
-        student_id=student_id,
+        group_id=str(group_id),
+        student_id=str(student_id),
     )
 
     new_balance = progress.balance + points
@@ -174,7 +182,7 @@ def create_badge(
     icon: str,
 ) -> Badge:
     return Badge.objects.create(
-        group_id=group_id,
+        group_id=str(group_id),
         name=name,
         description=description,
         icon=icon,
@@ -183,7 +191,7 @@ def create_badge(
 
 def get_badge(*, group_id: UUID, badge_id: int) -> Badge:
     try:
-        return Badge.objects.get(pk=badge_id, group_id=group_id)
+        return Badge.objects.get(pk=badge_id, group_id=str(group_id))
     except Badge.DoesNotExist as exc:
         raise BadgeNotFoundError from exc
 
@@ -223,7 +231,7 @@ def award_badge(
     badge = get_badge(group_id=group_id, badge_id=badge_id)
     award, created = BadgeAward.objects.get_or_create(
         badge=badge,
-        student_id=student_id,
+        student_id=str(student_id),
         revoked_at__isnull=True,
         defaults={
             "awarded_by": awarded_by,
@@ -244,8 +252,8 @@ def list_student_badges(
     return (
         BadgeAward.objects.select_related("badge")
         .filter(
-            badge__group_id=group_id,
-            student_id=student_id,
+            badge__group_id=str(group_id),
+            student_id=str(student_id),
             revoked_at__isnull=True,
         )
         .order_by("-created_at", "-id")
@@ -255,8 +263,8 @@ def list_student_badges(
 def revoke_badge(*, group_id: UUID, student_id: UUID, award_id: int) -> None:
     awards = BadgeAward.objects.filter(
         pk=award_id,
-        badge__group_id=group_id,
-        student_id=student_id,
+        badge__group_id=str(group_id),
+        student_id=str(student_id),
     )
     updated = BadgeAward.objects.filter(
         pk__in=awards.values("pk"), revoked_at__isnull=True

@@ -71,7 +71,7 @@ def test_teacher_creates_and_awards_badge_without_student_progress(
     assert response.status_code == 201
     created_badge = response.json()
     badge = Badge.objects.get(pk=created_badge["id"])
-    assert badge.group_id == GROUP_ID
+    assert badge.group_id == str(GROUP_ID)
     assert badge.name == created_badge["name"] == "Pomocna dłoń"
     assert badge.description == created_badge["description"] == "Za pomoc w klasie"
     assert badge.icon == created_badge["icon"] == "medal"
@@ -88,7 +88,7 @@ def test_teacher_creates_and_awards_badge_without_student_progress(
     result = response.json()
     award = BadgeAward.objects.get(pk=result["id"])
     assert award.badge_id == result["badgeId"] == badge.pk
-    assert str(award.student_id) == result["studentId"] == str(STUDENT_ID)
+    assert award.student_id == result["studentId"] == str(STUDENT_ID)
     assert award.awarded_by == result["awardedBy"] == TEACHER_ID
     assert before_award <= award.created_at <= timezone.now()
     assert parse_datetime(result["createdAt"]) == award.created_at

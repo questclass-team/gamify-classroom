@@ -14,7 +14,7 @@ POINTS_MAX = 2**31 - 1
 
 
 class GroupGameConfiguration(models.Model):
-    group_id = models.UUIDField(unique=True)
+    group_id = models.CharField(max_length=100, unique=True)
     currency_name = models.CharField(
         max_length=CURRENCY_NAME_MAX_LENGTH,
         default="Punkty",
@@ -73,8 +73,8 @@ class Rank(models.Model):
 
 
 class StudentProgress(models.Model):
-    group_id = models.UUIDField()
-    student_id = models.UUIDField()
+    group_id = models.CharField(max_length=100)
+    student_id = models.CharField(max_length=100)
     balance = models.IntegerField(
         default=0,
         validators=[
@@ -145,7 +145,7 @@ class Badge(models.Model):
         STAR = "star", "Star"
         TROPHY = "trophy", "Trophy"
 
-    group_id = models.UUIDField()
+    group_id = models.CharField(max_length=100)
     name = models.CharField(
         max_length=40,
     )
@@ -164,7 +164,7 @@ class Badge(models.Model):
 
 class BadgeAward(models.Model):
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="awards")
-    student_id = models.UUIDField()
+    student_id = models.CharField(max_length=100)
     awarded_by = models.CharField(
         max_length=100,
     )
