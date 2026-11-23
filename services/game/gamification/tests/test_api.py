@@ -1,11 +1,15 @@
 from pathlib import Path
+from uuid import UUID
 
+import httpx
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from common.core_client import CoreClient, CoreGroupNotFound, CoreUnavailable
 from gamification.models import GroupGameConfiguration
+
+GROUP_ID = UUID("11111111-1111-4111-8111-111111111111")
 
 
 def auth_header(token: str) -> dict[str, str]:
@@ -14,21 +18,22 @@ def auth_header(token: str) -> dict[str, str]:
 
 @pytest.fixture
 def group_access(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        CoreClient,
-        "ensure_group_access",
-        lambda _self, _group_id, _authorization: None,
-    )
+    def get(url, *, headers, timeout):
+        assert url.endswith(f"/api/core/groups/{GROUP_ID}")
+        assert headers["Authorization"].startswith("Bearer ")
+        return httpx.Response(200)
+
+    monkeypatch.setattr("common.core_client.httpx.get", get)
 
 
 @pytest.fixture
 def config_url() -> str:
-    return reverse("game:group-game-config", kwargs={"group_id": "group-1"})
+    return reverse("game:group-game-config", kwargs={"group_id": GROUP_ID})
 
 
 @pytest.fixture
 def icon_url() -> str:
-    return reverse("game:currency-icon", kwargs={"group_id": "group-1"})
+    return reverse("game:currency-icon", kwargs={"group_id": GROUP_ID})
 
 
 @pytest.fixture
@@ -89,7 +94,7 @@ def test_put_updates_and_sorts_configuration(
         ],
     }
 
-    configuration = GroupGameConfiguration.objects.get(group_id="group-1")
+    configuration = GroupGameConfiguration.objects.get(group_id=GROUP_ID)
     assert configuration.ranks.count() == 3
 
 
@@ -139,7 +144,7 @@ def test_put_rejects_invalid_configuration(
     )
 
     assert response.status_code == 400
-    assert not GroupGameConfiguration.objects.filter(group_id="group-1").exists()
+    assert not GroupGameConfiguration.objects.filter(group_id=GROUP_ID).exists()
 
 
 @pytest.mark.django_db
@@ -222,7 +227,7 @@ def test_upload_and_delete_currency_icon(
     delete_response = api_client.delete(icon_url, **headers)
 
     assert delete_response.status_code == 204
-    assert not GroupGameConfiguration.objects.get(group_id="group-1").currency_icon
+    assert not GroupGameConfiguration.objects.get(group_id=GROUP_ID).currency_icon
 
 
 @pytest.mark.django_db

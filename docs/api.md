@@ -219,6 +219,90 @@ current balance using that group's configuration. If no threshold qualifies, `ra
 Errors: `400` invalid award or balance limit exceeded, `401` missing or invalid JWT, `403` non-teacher,
 `404` missing/foreign group or student not in the group, `503` Core unavailable.
 
+### Group badges
+
+These endpoints require a teacher JWT. Core verifies that the teacher owns the group and, for student routes,
+that the student belongs to it. Use Core UUIDs for `{groupId}` and `{studentId}`. Badge and award IDs are integers.
+
+#### `POST /api/game/groups/{groupId}/badges`
+
+Creates a badge in the group from the URL. Send a `name` of 1–40 characters after trimming whitespace, an optional
+`description` of up to 200 characters (defaults to an empty string), and an optional `icon`: `medal` (default),
+`star`, or `trophy`.
+
+```json
+{ "name": "Pomocna dłoń", "description": "Za pomoc w klasie", "icon": "star" }
+```
+
+Returns `201 Created` with the saved badge:
+
+```json
+{
+  "id": 1,
+  "groupId": "11111111-1111-4111-8111-111111111111",
+  "name": "Pomocna dłoń",
+  "description": "Za pomoc w klasie",
+  "icon": "star",
+  "createdAt": "2026-11-23T19:00:00Z"
+}
+```
+
+#### `PATCH /api/game/groups/{groupId}/badges/{badgeId}`
+
+Updates only the supplied `name`, `description`, or `icon`. Send an empty `description` to clear it. Returns `200`
+with the updated badge. Existing awards refer to the same badge, so its updated details appear in the student list.
+
+#### `POST /api/game/groups/{groupId}/students/{studentId}/badges`
+
+Awards an existing badge from the same group. Send a positive integer `badgeId`:
+
+```json
+{ "badgeId": 1 }
+```
+
+Returns `201 Created` with the saved award. The student comes from the URL, `awardedBy` is the teacher's JWT `sub`,
+and `createdAt` is the server-generated UTC timestamp.
+
+```json
+{
+  "id": 1,
+  "badgeId": 1,
+  "badge": {
+    "id": 1,
+    "groupId": "11111111-1111-4111-8111-111111111111",
+    "name": "Pomocna dłoń",
+    "description": "Za pomoc w klasie",
+    "icon": "star",
+    "createdAt": "2026-11-23T19:00:00Z"
+  },
+  "studentId": "33333333-3333-4333-8333-333333333333",
+  "awardedBy": "55555555-5555-4555-8555-555555555555",
+  "createdAt": "2026-11-23T19:05:00Z"
+}
+```
+
+A student can receive a badge without having any points. Awarding a badge does not change the student's balance or rank.
+Only one award of a given badge can be active for a student. After revocation, the teacher can award the badge again.
+
+#### `GET /api/game/groups/{groupId}/students/{studentId}/badges`
+
+Returns `200` with the student's active awards in that group, newest first. Each item has the same shape as the
+award response above, including the badge details. Returns `[]` when no awards are active.
+
+#### `DELETE /api/game/groups/{groupId}/students/{studentId}/badges/{awardId}`
+
+Revokes the award without deleting its database record. Use the award `id`, not the `badgeId`. Returns `204` even
+if the same award was already revoked. It no longer appears in the active list; any later award has a new `id`.
+
+| Status | Meaning |
+|---|---|
+| `400 Bad Request` | Invalid badge data or invalid `badgeId`. |
+| `401 Unauthorized` | Missing or invalid JWT. |
+| `403 Forbidden` | The caller is authenticated but is not a teacher. |
+| `404 Not Found` | Missing or foreign group, student outside the group, or badge/award not found under the supplied IDs. |
+| `409 Conflict` | The student already has this badge active. Only applies to awarding. |
+| `503 Service Unavailable` | Core is unavailable. |
+
 ## Local API documentation
 
 After starting Docker Compose, open:
