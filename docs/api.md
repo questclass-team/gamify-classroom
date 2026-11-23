@@ -198,6 +198,27 @@ Removes the icon and returns `204 No Content`.
 These endpoints return `400` for invalid configuration or files, `401` for an invalid token, `403` for a non-teacher,
 `404` for a missing/foreign group and `503` when Core cannot be reached.
 
+### Group student points
+
+These endpoints require a teacher JWT. Core verifies that the teacher owns the group and that the student currently
+belongs to it. Use the UUIDs returned by Core for `{groupId}` and `{studentId}`.
+
+| Endpoint | Request | Success |
+|---|---|---|
+| `POST /api/game/groups/{groupId}/students/{studentId}/rewards` | `{ "points": 20, "reason": "Class participation" }`; `reason` is optional (up to 200 characters) | `201`, the saved reward |
+| `GET /api/game/groups/{groupId}/students/{studentId}/rewards` | — | `200`, reward history, newest first (or `[]`) |
+| `GET /api/game/groups/{groupId}/students/{studentId}/progress` | — | `200`, `{ "groupId": "<uuid>", "studentId": "<uuid>", "balance": 100, "rank": { "name": "Giermek", "threshold": 100 } }` |
+
+Each reward contains `id`, `points`, `reason`, `studentId`, `awardedBy` (teacher ID) and `createdAt` (UTC timestamp).
+Points must be a positive JSON integer. The reward and balance are saved together; an invalid award changes neither.
+Both an individual award and the resulting balance must fit within 2,147,483,647 points.
+
+Balance starts at `0` and is separate for each student and group. The rank is the highest threshold at or below the
+current balance using that group's configuration. If no threshold qualifies, `rank` is `null`.
+
+Errors: `400` invalid award or balance limit exceeded, `401` missing or invalid JWT, `403` non-teacher,
+`404` missing/foreign group or student not in the group, `503` Core unavailable.
+
 ## Local API documentation
 
 After starting Docker Compose, open:

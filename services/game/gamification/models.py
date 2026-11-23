@@ -8,6 +8,9 @@ RANK_THRESHOLD_MAX = 1_000_000
 MAX_RANKS = 20
 CURRENCY_ICON_MAX_BYTES = 256 * 1024
 CURRENCY_ICON_CONTENT_TYPES = frozenset({"image/png", "image/gif", "image/webp"})
+REWARD_REASON_MAX_LENGTH = 200
+# PostgreSQL's integer range also applies when developing locally with SQLite.
+POINTS_MAX = 2**31 - 1
 
 
 class GroupGameConfiguration(models.Model):
@@ -70,3 +73,74 @@ class Rank(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.threshold})"
+
+
+class StudentProgress(models.Model):
+    group_id = models.CharField(
+        max_length=100,
+    )
+    student_id = models.CharField(
+        max_length=100,
+    )
+    balance = models.IntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        constraints = [  # noqa: RUF012
+            models.UniqueConstraint(
+                fields=("group_id", "student_id"),
+                name="unique_student_progress_per_group",
+            ),
+            models.CheckConstraint(
+                condition=Q(balance__gte=0),
+                name="student_balance_not_negative",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Progress for student {self.student_id}"
+
+
+class PointReward(models.Model):
+    progress = models.ForeignKey(
+        StudentProgress,
+        on_delete=models.CASCADE,
+        related_name="rewards",
+    )
+    points = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+        ],
+    )
+    reason = models.CharField(
+        max_length=REWARD_REASON_MAX_LENGTH,
+        blank=True,
+    )
+    awarded_by = models.CharField(
+        max_length=100,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = [  # noqa: RUF012
+            models.CheckConstraint(
+                condition=Q(points__gte=1),
+                name="reward_points_positive",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.points} points for {self.progress.student_id}"

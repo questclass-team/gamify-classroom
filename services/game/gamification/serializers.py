@@ -3,8 +3,11 @@ from rest_framework import serializers
 from .models import (
     CURRENCY_NAME_MAX_LENGTH,
     MAX_RANKS,
+    POINTS_MAX,
     RANK_NAME_MAX_LENGTH,
     RANK_THRESHOLD_MAX,
+    REWARD_REASON_MAX_LENGTH,
+    PointReward,
     Rank,
 )
 
@@ -75,3 +78,45 @@ class GroupGameConfigSerializer(serializers.Serializer):
         if not instance.currency_icon:
             return None
         return instance.currency_icon.url
+
+
+class StrictIntegerField(serializers.IntegerField):
+    def to_internal_value(self, data: object) -> int:
+        if isinstance(data, bool) or not isinstance(data, int):
+            self.fail("invalid")
+
+        return data
+
+
+class AwardPointsSerializer(serializers.Serializer):
+    points = StrictIntegerField(min_value=1, max_value=POINTS_MAX)
+    reason = serializers.CharField(
+        max_length=REWARD_REASON_MAX_LENGTH,
+        allow_blank=True,
+        default="",
+    )
+
+
+class StudentProgressSerializer(serializers.Serializer):
+    groupId = serializers.UUIDField(source="group_id")
+    studentId = serializers.UUIDField(source="student_id")
+    balance = serializers.IntegerField()
+    rank = RankSerializer(allow_null=True, read_only=True)
+
+
+class RewardHistoryItemSerializer(serializers.ModelSerializer):
+    studentId = serializers.UUIDField(source="progress.student_id", read_only=True)
+    awardedBy = serializers.CharField(source="awarded_by", read_only=True)
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = PointReward
+        fields = (
+            "id",
+            "points",
+            "reason",
+            "studentId",
+            "awardedBy",
+            "createdAt",
+        )
+        read_only_fields = ("points", "reason")
