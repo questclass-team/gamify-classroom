@@ -1,15 +1,25 @@
 import { delay, http, HttpResponse } from 'msw'
+import { rankForBalance } from '../components/blask/ranks'
 import {
+  BADGE_DESCRIPTION_MAX_LENGTH,
+  BADGE_ICONS,
+  BADGE_NAME_MAX_LENGTH,
   CURRENCY_ICON_MAX_BYTES,
   CURRENCY_ICON_TYPES,
   GROUP_NAME_MAX_LENGTH,
+  POINTS_MAX,
   RANK_THRESHOLD_MAX,
+  REWARD_REASON_MAX_LENGTH,
   STUDENT_SEARCH_MIN_LENGTH,
   USER_IMPORT_CSV_HEADER,
   type AddGroupStudentRequest,
+  type Badge,
+  type BadgeAward,
+  type BadgeIcon,
   type CreateGroupRequest,
   type CurrencyIconResponse,
   type CurrentUser,
+  type GameErrorBody,
   type GroupDetail,
   type GroupGameConfig,
   type GroupStudent,
@@ -18,7 +28,9 @@ import {
   type LoginResponse,
   type RefreshResponse,
   type ProblemDetails,
+  type RewardHistoryItem,
   type Role,
+  type StudentProgress,
   type StudentSummary,
   type UpdateGameConfigRequest,
   type UserImportReport,
@@ -26,11 +38,16 @@ import {
 import {
   DEFAULT_GAME_CONFIG,
   MOCK_PASSWORD,
+  mockBadgeAwards,
+  mockBadges,
   mockGameConfigs,
   mockGroups,
   mockLdapOnlyLogins,
+  mockRewards,
   mockUsers,
+  type MockBadgeAward,
   type MockGroup,
+  type MockReward,
 } from './data'
 import { createMockToken, readMockBearer } from './jwt'
 import { importUsersFromCsv } from './userImport'
@@ -255,7 +272,235 @@ export const handlers = [
     mockGameConfigs.set(group.id, { ...current, currencyIconUrl: null })
     return new HttpResponse(null, { status: 204 })
   }),
+
+  // ---- game service: rewards, progress and badges (DRF error bodies, like the real service) ----
+
+  http.get(
+    '/api/game/groups/:groupId/students/:studentId/progress',
+    async ({ request, params }) => {
+      // Varied latency, so the list shows balances arriving one by one as it does for real.
+      await delay(150 + Math.round(Math.random() * 450))
+      const member = gameMember(request, params.groupId, params.studentId)
+      if (member instanceof Response) return member
+      const balance = balanceOf(member.group.id, member.studentId)
+      const ranks = (mockGameConfigs.get(member.group.id) ?? DEFAULT_GAME_CONFIG).ranks
+      return HttpResponse.json({
+        groupId: member.group.id,
+        studentId: member.studentId,
+        balance,
+        rank: rankForBalance(balance, ranks),
+      } satisfies StudentProgress)
+    },
+  ),
+
+  http.get('/api/game/groups/:groupId/students/:studentId/rewards', async ({ request, params }) => {
+    await delay(250)
+    const member = gameMember(request, params.groupId, params.studentId)
+    if (member instanceof Response) return member
+    const rewards = mockRewards
+      .filter((item) => item.groupId === member.group.id && item.studentId === member.studentId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
+    return HttpResponse.json(rewards.map(toRewardItem))
+  }),
+
+  http.post(
+    '/api/game/groups/:groupId/students/:studentId/rewards',
+    async ({ request, params }) => {
+      await delay(300)
+      const member = gameMember(request, params.groupId, params.studentId)
+      if (member instanceof Response) return member
+      const body = (await request.json()) as { points?: unknown; reason?: unknown }
+      const { points, reason = '' } = body
+      if (typeof points !== 'number' || !Number.isInteger(points)) {
+        return gameError(400, { points: ['A valid integer is required.'] })
+      }
+      if (points < 1 || points > POINTS_MAX) {
+        return gameError(400, { points: [`Ensure this value is between 1 and ${POINTS_MAX}.`] })
+      }
+      if (typeof reason !== 'string' || reason.trim().length > REWARD_REASON_MAX_LENGTH) {
+        return gameError(400, {
+          reason: [`Ensure this field has no more than ${REWARD_REASON_MAX_LENGTH} characters.`],
+        })
+      }
+      if (balanceOf(member.group.id, member.studentId) + points > POINTS_MAX) {
+        return gameError(400, { points: 'Award would exceed the balance limit.' })
+      }
+      const saved: MockReward = {
+        id: nextId(mockRewards),
+        groupId: member.group.id,
+        studentId: member.studentId,
+        points,
+        reason: reason.trim(),
+        awardedBy: member.teacher.id,
+        createdAt: new Date().toISOString(),
+      }
+      mockRewards.push(saved)
+      return HttpResponse.json(toRewardItem(saved), { status: 201 })
+    },
+  ),
+
+  http.get('/api/game/groups/:groupId/badges', async ({ request, params }) => {
+    await delay(250)
+    const owned = gameGroup(request, params.groupId)
+    if (owned instanceof Response) return owned
+    const badges = mockBadges
+      .filter((badge) => badge.groupId === owned.group.id)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id - b.id)
+    return HttpResponse.json(badges)
+  }),
+
+  http.post('/api/game/groups/:groupId/badges', async ({ request, params }) => {
+    await delay(300)
+    const owned = gameGroup(request, params.groupId)
+    if (owned instanceof Response) return owned
+    const body = (await request.json()) as { name?: unknown; description?: unknown; icon?: unknown }
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const { description = '', icon = 'medal' } = body
+    if (name === '' || name.length > BADGE_NAME_MAX_LENGTH) {
+      return gameError(400, { name: ['Ensure this field has 1 to 40 characters.'] })
+    }
+    if (typeof description !== 'string' || description.length > BADGE_DESCRIPTION_MAX_LENGTH) {
+      return gameError(400, { description: ['Ensure this field has no more than 200 characters.'] })
+    }
+    if (!BADGE_ICONS.includes(icon as BadgeIcon)) {
+      return gameError(400, { icon: [`"${String(icon)}" is not a valid choice.`] })
+    }
+    const badge: Badge = {
+      id: nextId(mockBadges),
+      groupId: owned.group.id,
+      name,
+      description: description.trim(),
+      icon: icon as BadgeIcon,
+      createdAt: new Date().toISOString(),
+    }
+    mockBadges.push(badge)
+    return HttpResponse.json(badge, { status: 201 })
+  }),
+
+  http.get('/api/game/groups/:groupId/students/:studentId/badges', async ({ request, params }) => {
+    await delay(250)
+    const member = gameMember(request, params.groupId, params.studentId)
+    if (member instanceof Response) return member
+    const awards = mockBadgeAwards
+      .filter(
+        (award) =>
+          award.groupId === member.group.id &&
+          award.studentId === member.studentId &&
+          award.revokedAt === null,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
+    return HttpResponse.json(awards.map(toBadgeAward))
+  }),
+
+  http.post('/api/game/groups/:groupId/students/:studentId/badges', async ({ request, params }) => {
+    await delay(300)
+    const member = gameMember(request, params.groupId, params.studentId)
+    if (member instanceof Response) return member
+    const { badgeId } = (await request.json()) as { badgeId?: unknown }
+    if (typeof badgeId !== 'number' || !Number.isInteger(badgeId) || badgeId < 1) {
+      return gameError(400, { badgeId: ['A valid integer is required.'] })
+    }
+    const badge = mockBadges.find((item) => item.id === badgeId && item.groupId === member.group.id)
+    if (badge === undefined) return gameError(404, { detail: 'Badge not found.' })
+    const active = mockBadgeAwards.some(
+      (award) =>
+        award.badgeId === badgeId &&
+        award.studentId === member.studentId &&
+        award.revokedAt === null,
+    )
+    if (active) return gameError(409, { detail: 'This student already has this badge.' })
+    const award: MockBadgeAward = {
+      id: nextId(mockBadgeAwards),
+      groupId: member.group.id,
+      badgeId,
+      studentId: member.studentId,
+      awardedBy: member.teacher.id,
+      createdAt: new Date().toISOString(),
+      revokedAt: null,
+    }
+    mockBadgeAwards.push(award)
+    return HttpResponse.json(toBadgeAward(award), { status: 201 })
+  }),
+
+  http.delete(
+    '/api/game/groups/:groupId/students/:studentId/badges/:awardId',
+    async ({ request, params }) => {
+      await delay(300)
+      const member = gameMember(request, params.groupId, params.studentId)
+      if (member instanceof Response) return member
+      const award = mockBadgeAwards.find(
+        (item) =>
+          String(item.id) === params.awardId &&
+          item.groupId === member.group.id &&
+          item.studentId === member.studentId,
+      )
+      if (award === undefined) return gameError(404, { detail: 'Badge award not found.' })
+      award.revokedAt ??= new Date().toISOString()
+      return new HttpResponse(null, { status: 204 })
+    },
+  ),
 ]
+
+function gameError(status: number, body: GameErrorBody) {
+  return HttpResponse.json(body, { status })
+}
+
+/**
+ * The game service's checks: a teacher token (401/403 otherwise) and a group the teacher owns in
+ * Core (404 for foreign or missing groups, so they look the same).
+ */
+function gameGroup(
+  request: Request,
+  groupId: unknown,
+): { teacher: CurrentUser; group: MockGroup } | Response {
+  const userId = readMockBearer(request.headers.get('Authorization'))
+  const user = mockUsers.find((candidate) => candidate.id === userId)
+  if (user === undefined) {
+    return gameError(401, { detail: 'Authentication credentials were not provided.' })
+  }
+  if (user.role !== 'teacher') {
+    return gameError(403, { detail: 'You do not have permission to perform this action.' })
+  }
+  const group = mockGroups.find((candidate) => candidate.id === groupId)
+  if (group === undefined || group.teacherId !== user.id) {
+    return gameError(404, { detail: 'Group not found.' })
+  }
+  return { teacher: user, group }
+}
+
+/** `gameGroup` plus the student's current membership (404 for a student outside the group). */
+function gameMember(
+  request: Request,
+  groupId: unknown,
+  studentId: unknown,
+): { teacher: CurrentUser; group: MockGroup; studentId: string } | Response {
+  const owned = gameGroup(request, groupId)
+  if (owned instanceof Response) return owned
+  const member = owned.group.members.find((candidate) => candidate.studentId === studentId)
+  if (member === undefined) return gameError(404, { detail: 'Group not found.' })
+  return { ...owned, studentId: member.studentId }
+}
+
+function balanceOf(groupId: string, studentId: string): number {
+  return mockRewards
+    .filter((item) => item.groupId === groupId && item.studentId === studentId)
+    .reduce((sum, item) => sum + item.points, 0)
+}
+
+function nextId(items: readonly { id: number }[]): number {
+  return Math.max(0, ...items.map((item) => item.id)) + 1
+}
+
+function toRewardItem({ id, points, reason, studentId, awardedBy, createdAt }: MockReward) {
+  return { id, points, reason, studentId, awardedBy, createdAt } satisfies RewardHistoryItem
+}
+
+function toBadgeAward(award: MockBadgeAward): BadgeAward {
+  const badge = mockBadges.find((item) => item.id === award.badgeId)
+  if (badge === undefined) throw new Error(`Mock badge ${award.badgeId} is missing.`)
+  const { id, badgeId, studentId, awardedBy, createdAt } = award
+  return { id, badgeId, badge, studentId, awardedBy, createdAt }
+}
 
 /** Group owned by the calling teacher, or 404 so foreign groups are indistinguishable from missing. */
 function ownGroup(request: Request, groupId: unknown): MockGroup | Response {

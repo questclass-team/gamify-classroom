@@ -1,4 +1,4 @@
-import type { CurrentUser, GroupGameConfig } from '../api/types'
+import type { Badge, CurrentUser, GroupGameConfig } from '../api/types'
 
 export interface MockGroup {
   id: string
@@ -43,6 +43,11 @@ export const mockGroups: MockGroup[] = [
     members: [
       { studentId: 'u-student', addedAt: '2026-10-06T08:05:00Z' },
       { studentId: 'u-student2', addedAt: '2026-10-06T08:06:00Z' },
+      { studentId: 'u-student3', addedAt: '2026-10-06T08:07:00Z' },
+      { studentId: 'u-student4', addedAt: '2026-10-06T08:08:00Z' },
+      { studentId: 'u-student5', addedAt: '2026-10-06T08:09:00Z' },
+      { studentId: 'u-student6', addedAt: '2026-10-06T08:10:00Z' },
+      { studentId: 'u-student8', addedAt: '2026-10-13T09:30:00Z' },
     ],
     createdAt: '2026-10-06T08:00:00Z',
   },
@@ -86,3 +91,99 @@ export const DEFAULT_GAME_CONFIG: GroupGameConfig = {
   currencyIconUrl: null,
   ranks: [],
 }
+
+/** Point reward in the game service; the balance is the sum of a student's rewards per group. */
+export interface MockReward {
+  id: number
+  groupId: string
+  studentId: string
+  points: number
+  reason: string
+  awardedBy: string
+  createdAt: string
+}
+
+export interface MockBadgeAward {
+  id: number
+  groupId: string
+  badgeId: number
+  studentId: string
+  awardedBy: string
+  createdAt: string
+  /** Revoked awards stay stored, like in the game service, but are never listed. */
+  revokedAt: string | null
+}
+
+function reward(
+  id: number,
+  studentId: string,
+  points: number,
+  reason: string,
+  createdAt: string,
+): MockReward {
+  return { id, groupId: 'g-1', studentId, points, reason, awardedBy: 'u-teacher', createdAt }
+}
+
+/** Rewards in g-1 from the last weeks of the semester. */
+export const mockRewards: MockReward[] = [
+  reward(1, 'u-student', 40, 'Aktywność na zajęciach', '2026-10-13T09:40:00Z'),
+  reward(2, 'u-student2', 30, 'Aktywność na zajęciach', '2026-10-13T09:41:00Z'),
+  reward(3, 'u-student4', 70, 'Najlepsza analiza wymagań w grupie', '2026-10-13T09:45:00Z'),
+  reward(4, 'u-student', 60, 'Laboratorium 3: diagram przypadków użycia', '2026-10-27T10:05:00Z'),
+  reward(5, 'u-student2', 80, 'Laboratorium 3: diagram przypadków użycia', '2026-10-27T10:06:00Z'),
+  reward(6, 'u-student3', 50, 'Laboratorium 3: diagram przypadków użycia', '2026-10-27T10:07:00Z'),
+  reward(7, 'u-student4', 45, 'Laboratorium 3: diagram przypadków użycia', '2026-10-27T10:08:00Z'),
+  reward(8, 'u-student2', 120, 'Projekt, etap 1: specyfikacja', '2026-11-10T11:20:00Z'),
+  reward(9, 'u-student6', 100, 'Projekt, etap 1: specyfikacja', '2026-11-10T11:21:00Z'),
+  reward(10, 'u-student8', 15, 'Poprawka laboratorium 3', '2026-11-12T08:15:00Z'),
+  reward(11, 'u-student', 25, 'Prezentacja przeglądu sprintu', '2026-11-17T12:30:00Z'),
+  reward(12, 'u-student6', 180, 'Najlepsza prezentacja przeglądu sprintu', '2026-11-17T12:31:00Z'),
+  reward(13, 'u-student2', 90, 'Przegląd kodu dla innej drużyny', '2026-11-19T14:10:00Z'),
+]
+
+/** Badge catalog of the game service (all groups). */
+export const mockBadges: Badge[] = [
+  {
+    id: 1,
+    groupId: 'g-1',
+    name: 'Pomocna dłoń',
+    description: 'Za pomoc innym w czasie zajęć',
+    icon: 'star',
+    createdAt: '2026-10-13T09:00:00Z',
+  },
+  {
+    id: 2,
+    groupId: 'g-1',
+    name: 'Czysty przegląd',
+    description: 'Za kod przyjęty w przeglądzie bez żadnych poprawek',
+    icon: 'medal',
+    createdAt: '2026-10-20T10:00:00Z',
+  },
+  {
+    id: 3,
+    groupId: 'g-1',
+    name: 'Mistrz testów',
+    description: 'Za projekt pokryty testami w ponad 80%',
+    icon: 'trophy',
+    createdAt: '2026-11-03T10:00:00Z',
+  },
+]
+
+function badgeAward(
+  id: number,
+  badgeId: number,
+  studentId: string,
+  createdAt: string,
+  revokedAt: string | null = null,
+): MockBadgeAward {
+  return { id, groupId: 'g-1', badgeId, studentId, awardedBy: 'u-teacher', createdAt, revokedAt }
+}
+
+export const mockBadgeAwards: MockBadgeAward[] = [
+  badgeAward(1, 1, 'u-student', '2026-10-20T10:30:00Z'),
+  badgeAward(2, 2, 'u-student2', '2026-10-21T08:10:00Z'),
+  // Given by mistake and revoked a minute later: stored, never listed.
+  badgeAward(3, 2, 'u-student8', '2026-10-21T08:11:00Z', '2026-10-21T08:12:00Z'),
+  badgeAward(4, 1, 'u-student6', '2026-11-05T09:00:00Z'),
+  badgeAward(5, 3, 'u-student2', '2026-11-12T13:00:00Z'),
+]

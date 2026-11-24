@@ -4,6 +4,7 @@
 @import '@fontsource/ibm-plex-sans/500.css';
 @import '@fontsource/ibm-plex-sans/600.css';
 @import '@fontsource/ibm-plex-mono/400.css';
+@import './blask.css';
 
 /*
  * Design tokens: paper, ink, emerald and gold. Tailwind's default palette is disabled,
@@ -44,6 +45,33 @@
   --font-display: 'Fraunces Variable', Georgia, serif;
 
   --radius-ui: 3px;
+}
+
+/*
+ * Blask palette (light), the design of the new screens: paper and ink with a cobalt → iris light,
+ * lavender at rest, raspberry as the only warning colour, nothing yellow. Used only inside the
+ * `.blask` scope (styles/blask.css); it must follow the reset above, which clears earlier colours.
+ */
+@theme static {
+  --color-blask-paper: #f6f7fb;
+  --color-blask-white: #ffffff;
+  --color-blask-mist: #eef0fe;
+  --color-blask-haze: #dde3ff;
+  --color-blask-peri-soft: #e8edff;
+  --color-blask-peri: #afc0ff;
+  --color-blask-line: #daddea;
+  --color-blask-lavender: #8e9bff;
+  --color-blask-cobalt: #2b3bff;
+  --color-blask-cobalt-deep: #1d29d6;
+  --color-blask-iris: #6c3bf4;
+  --color-blask-pearl: #fbfaff;
+  --color-blask-ink: #0e1020;
+  --color-blask-graphite: #4a4f66;
+  /* 5.4:1 on white. */
+  --color-blask-raspberry: #c72a5c;
+
+  --font-blask-display: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
+  --font-blask-ui: 'Figtree Variable', system-ui, sans-serif;
 }
 
 /* Frame width of panels, inputs and buttons (2–3px in the fantasy theme). */

@@ -177,6 +177,112 @@ export interface CurrencyIconResponse {
   currencyIconUrl: string
 }
 
+// ---- game service: point rewards, progress and badges per group (teacher only) ----
+
+export const REWARD_REASON_MAX_LENGTH = 200
+/** Largest single award and largest balance (32-bit signed integer). */
+export const POINTS_MAX = 2_147_483_647
+export const BADGE_NAME_MAX_LENGTH = 40
+export const BADGE_DESCRIPTION_MAX_LENGTH = 200
+export const BADGE_ICONS = ['medal', 'star', 'trophy'] as const
+
+/** A rank as embedded in progress responses (same shape as a configured `Rank`). */
+export type RankRef = Rank
+
+/**
+ * POST /api/game/groups/{groupId}/students/{studentId}/rewards -> 201 RewardHistoryItem.
+ * 400 when `points` is not a JSON integer in 1…POINTS_MAX, the reason is longer than
+ * REWARD_REASON_MAX_LENGTH or the new balance would exceed POINTS_MAX (errors keyed by field).
+ * 404 when the group is not the caller's or the student is not a member; 503 when Core is down.
+ */
+export interface AwardPointsRequest {
+  points: number
+  /** Optional, may be empty. */
+  reason?: string
+}
+
+/** Item of GET …/students/{studentId}/rewards (newest first) and the POST response. */
+export interface RewardHistoryItem {
+  id: number
+  points: number
+  reason: string
+  studentId: string
+  /** Id (JWT `sub`) of the teacher who gave the reward. */
+  awardedBy: string
+  /** ISO 8601 timestamp. */
+  createdAt: string
+}
+
+/**
+ * GET /api/game/groups/{groupId}/students/{studentId}/progress -> StudentProgress.
+ * Balance 0 and the rank for 0 when the student was never awarded.
+ */
+export interface StudentProgress {
+  groupId: string
+  studentId: string
+  balance: number
+  /** Highest rank whose threshold is at or below the balance; null when none qualifies. */
+  rank: RankRef | null
+}
+
+export type BadgeIcon = (typeof BADGE_ICONS)[number]
+
+/**
+ * Badge of a group. GET /api/game/groups/{groupId}/badges -> Badge[] ordered by `createdAt`, then
+ * `id` (oldest first; [] when none). PATCH …/badges/{badgeId} with any CreateBadgeRequest fields
+ * -> 200 Badge; 404 when the badge is not in that group.
+ */
+export interface Badge {
+  id: number
+  groupId: string
+  name: string
+  description: string
+  icon: BadgeIcon
+  createdAt: string
+}
+
+/**
+ * POST /api/game/groups/{groupId}/badges -> 201 Badge.
+ * 400 when the trimmed name is empty or longer than BADGE_NAME_MAX_LENGTH, the description is
+ * longer than BADGE_DESCRIPTION_MAX_LENGTH or the icon is not one of BADGE_ICONS.
+ */
+export interface CreateBadgeRequest {
+  name: string
+  /** Defaults to "". */
+  description?: string
+  /** Defaults to "medal". */
+  icon?: BadgeIcon
+}
+
+/**
+ * POST /api/game/groups/{groupId}/students/{studentId}/badges -> 201 BadgeAward.
+ * 409 `badge_already_awarded` when the student already has this badge active; 404 for a badge
+ * outside the group or a student who is not a member. Awarding never changes the balance.
+ */
+export interface AwardBadgeRequest {
+  badgeId: number
+}
+
+/**
+ * Active award: item of GET …/students/{studentId}/badges (newest first) and the POST response.
+ * DELETE …/students/{studentId}/badges/{awardId} revokes it -> 204 (also when already revoked);
+ * revoked awards are not listed and a new award gets a new id.
+ */
+export interface BadgeAward {
+  id: number
+  badgeId: number
+  badge: Badge
+  studentId: string
+  awardedBy: string
+  createdAt: string
+}
+
+/**
+ * Game service errors are Django REST framework bodies, not problem details: `{ "detail": "…" }`
+ * for 403/404/409/503 and `{ "<field>": ["…"] }` for 400.
+ */
+export type GameErrorBody = { detail?: string } & Record<string, unknown>
+
 /** Error body (ASP.NET Core / RFC 9457 problem details). */
 export interface ProblemDetails {
   type?: string
