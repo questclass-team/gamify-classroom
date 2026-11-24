@@ -4,6 +4,7 @@ import { AppLayout } from './layout/AppLayout'
 import { ImportAccountsPage } from './pages/admin/ImportAccountsPage'
 import { LoginPage } from './pages/LoginPage'
 import { StudentHomePage } from './pages/student/StudentHomePage'
+import { GroupAwardsPage } from './pages/teacher/awards/GroupAwardsPage'
 import { GroupConfigPage } from './pages/teacher/GroupConfigPage'
 import { GroupLayoutRoute } from './pages/teacher/GroupLayout'
 import { GroupsPage } from './pages/teacher/GroupsPage'
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <GroupStudentsPage /> },
               { path: 'config', element: <GroupConfigPage /> },
+              { path: 'awards', element: <GroupAwardsPage /> },
             ],
           },
         ],

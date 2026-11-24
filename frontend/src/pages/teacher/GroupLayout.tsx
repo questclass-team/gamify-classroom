@@ -64,6 +64,7 @@ function GroupLayout({ groupId }: { groupId: string }) {
             <GroupTab to={`/teacher/groups/${groupId}`} end>
               Studenci
             </GroupTab>
+            <GroupTab to={`/teacher/groups/${groupId}/awards`}>Nagrody</GroupTab>
             <GroupTab to={`/teacher/groups/${groupId}/config`}>Punkty i rangi</GroupTab>
           </nav>
           <Outlet

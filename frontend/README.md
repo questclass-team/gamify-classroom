@@ -55,3 +55,13 @@ Production builds never include the mocks.
   into labelled cards in narrow containers (`data-label` on cells).
 - `src/pages/teacher/gameConfigValidation.ts` – currency/rank rules mirrored from the game
   service (unique, non-negative integer thresholds), covered by tests.
+- Blask, the design of the new screens (teacher "Nagrody" tab, later the student views), is an
+  opt-in layer: put the `blask` class on a page's root and the older pages keep their look.
+  Palette and fonts are the `--color-blask-*` / `--font-blask-*` tokens in `global.css`
+  (`text-blask-graphite`, `bg-blask-paper`, …); `src/styles/blask.css` holds the scope (Figtree,
+  ink, cobalt focus ring, reduced motion) and the kit classes (`blask-panel`, `blask-btn`,
+  `blask-input`, `blask-chip`, `blask-display`, …); `src/components/blask/` the shared parts
+  (currency mark and amount, badge marks, rank star and progress line, notice, confirm dialog).
+- `src/pages/teacher/awards/` – the "Nagrody" tab: awards to many students at once (one request
+  per student, four at a time), inline badge creation, each student's history and badge revoke.
+  Its rules (form validation, history order, result texts) are plain modules with tests.
