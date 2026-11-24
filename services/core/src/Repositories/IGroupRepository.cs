@@ -34,8 +34,8 @@ namespace QuestClass.Core.Repositories
         Task<Group?> GetForMemberAsync(Guid groupId, Guid studentId, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Students of the group with only their nicknames, never names or logins (NFR-03): by nickname in Polish
-        /// alphabetical order, students without one last, then by id. Deleted student accounts are left out.
+        /// Students of the group with only their nicknames and avatars, never names or logins (NFR-03): by nickname in
+        /// Polish alphabetical order, students without one last, then by id. Deleted student accounts are left out.
         /// </summary>
         Task<IReadOnlyList<RosterEntry>> GetRosterAsync(Guid groupId, CancellationToken cancellationToken = default);
 
@@ -64,5 +64,5 @@ namespace QuestClass.Core.Repositories
 
     public sealed record StudentGroup(Group Group, User Teacher, DateTimeOffset JoinedAt);
 
-    public sealed record RosterEntry(Guid StudentId, string? Nickname);
+    public sealed record RosterEntry(Guid StudentId, string? Nickname, string? Avatar);
 }
