@@ -1,0 +1,1355 @@
+/*
+ * Blask UI kit: the global component classes every screen uses (type, surfaces, buttons, fields,
+ * chips, selection, notices, loading, dialogs, menus, tabs, breadcrumbs, tables, empty states).
+ * The React components in src/components/blask render these; plain markup may use them directly.
+ * Light values are the default, dark ones follow from the tokens or from the
+ * `[data-theme='dark']` rules next to each class. Motion eases out exponentially
+ * (--blask-ease) and stops under prefers-reduced-motion.
+ */
+
+/* Component classes sit in the components layer, so Tailwind utilities on the same element win. */
+@layer components {
+  /* ---- Type -------------------------------------------------------------------------------- */
+
+  /* Display type: Bricolage, high optical size, narrow, tight. */
+  .blask-display {
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-stretch: 85%;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    line-height: 0.96;
+    text-wrap: balance;
+  }
+
+  .blask-h1 {
+    font-size: clamp(3.25rem, 8vw, 7rem);
+    line-height: 0.92;
+  }
+
+  .blask-h2 {
+    font-size: clamp(2.25rem, 4.6vw, 4.25rem);
+  }
+
+  .blask-h3 {
+    font-size: clamp(1.375rem, 2vw, 1.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  [data-theme='dark'] .blask-display {
+    color: #fbfaff;
+  }
+
+  /* App page titles: an app, not a poster (one per page, the h1). */
+  .blask-page-title {
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-stretch: 88%;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    font-size: clamp(1.625rem, 1.2rem + 1vw, 2.25rem);
+  }
+
+  /* A section heading inside a page (an h2 outside a panel head). */
+  .blask-section-title {
+    font-size: 1.25rem;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .blask-lede {
+    color: var(--color-blask-graphite);
+    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+    line-height: 1.55;
+    max-width: 46ch;
+    text-wrap: pretty;
+  }
+
+  .blask-copy {
+    color: var(--color-blask-graphite);
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+
+  /* Line masks for a headline's slide-up. */
+  .blask-line-mask {
+    display: block;
+    overflow: clip;
+    overflow-clip-margin: 0.08em;
+    padding-bottom: 0.06em;
+    margin-bottom: -0.06em;
+  }
+
+  .blask-line-mask > span {
+    display: block;
+  }
+
+  /* ---- Surfaces ---------------------------------------------------------------------------- */
+
+  .blask-surface,
+  .blask-surface-raised {
+    background: var(--color-blask-white);
+    border: 1px solid var(--color-blask-line);
+    border-radius: 20px;
+  }
+
+  .blask-surface-raised {
+    box-shadow: 0 10px 30px -12px rgb(14 16 32 / 0.12);
+  }
+
+  [data-theme='dark'] .blask-surface-raised {
+    box-shadow:
+      0 16px 40px -16px rgb(2 4 24 / 0.8),
+      0 0 0 1px rgb(142 155 255 / 0.08);
+  }
+
+  /* A panel: the unit every app section sits in, with a head row and divided rows. */
+  .blask-panel {
+    background: var(--blask-panel);
+    border: 1px solid var(--blask-panel-border);
+    border-radius: 16px;
+    box-shadow: var(--blask-shadow-panel);
+  }
+
+  .blask-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--blask-divider);
+  }
+
+  .blask-panel-title {
+    font-weight: 650;
+    font-size: 1.0625rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .blask-panel-body {
+    padding: 1.25rem;
+  }
+
+  @media (min-width: 40rem) {
+    .blask-panel-body {
+      padding: 1.5rem;
+    }
+  }
+
+  /* Rows inside a panel: separated, with a hover tint. */
+  .blask-row {
+    border-top: 1px solid var(--blask-divider);
+    transition: background-color 160ms var(--blask-ease);
+  }
+
+  .blask-row:first-child {
+    border-top: 0;
+  }
+
+  .blask-row:hover {
+    background: var(--blask-row-hover);
+  }
+
+  /* ---- Buttons ----------------------------------------------------------------------------- */
+
+  .blask-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 160ms ease-out,
+      color 160ms ease-out,
+      border-color 160ms ease-out,
+      transform 160ms var(--blask-ease),
+      box-shadow 160ms ease-out;
+  }
+
+  .blask-btn:active:not(:disabled, [aria-disabled='true']) {
+    transform: scale(0.97);
+  }
+
+  .blask-btn:disabled,
+  .blask-btn[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  .blask-btn[data-busy='true'] {
+    cursor: progress;
+  }
+
+  .blask-btn-sm {
+    min-height: 2.25rem;
+    padding: 0 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  /* The one main action of a view. */
+  .blask-btn-primary {
+    background: #2b3bff;
+    color: #ffffff;
+  }
+
+  .blask-btn-primary:hover:not(:disabled, [aria-disabled='true']) {
+    background: #1d29d6;
+    box-shadow: 0 8px 20px -10px rgb(43 59 255 / 0.7);
+  }
+
+  .blask-btn-primary:disabled {
+    background: #c9cfe6;
+    color: #4a4f66;
+  }
+
+  .blask-btn-primary[data-busy='true'] {
+    background: #1d29d6;
+  }
+
+  [data-theme='dark'] .blask-btn-primary {
+    background: #2b3bff;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-btn-primary:hover:not(:disabled, [aria-disabled='true']) {
+    background: #3a49ff;
+    box-shadow: 0 8px 24px -8px rgb(108 59 244 / 0.8);
+  }
+
+  [data-theme='dark'] .blask-btn-primary:disabled {
+    background: #1a2373;
+    color: #8f96c8;
+  }
+
+  /* A second action that still needs weight (the landing, "Kup za 40 G"). */
+  .blask-btn-outline {
+    background: transparent;
+    border-color: #0e1020;
+    color: #0e1020;
+  }
+
+  .blask-btn-outline:hover:not(:disabled, [aria-disabled='true']) {
+    background: #0e1020;
+    color: #ffffff;
+  }
+
+  .blask-btn-outline:disabled {
+    border-color: #c9cfe6;
+    color: #6b7088;
+  }
+
+  [data-theme='dark'] .blask-btn-outline {
+    border-color: #8e9bff;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-btn-outline:hover:not(:disabled, [aria-disabled='true']) {
+    background: rgb(142 155 255 / 0.16);
+    border-color: #fbfaff;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-btn-outline:disabled {
+    border-color: #2a3370;
+    color: #8f96c8;
+  }
+
+  /* Everything else: cancel, retry, secondary actions in rows. */
+  .blask-btn-quiet {
+    background: #eef1fb;
+    color: #0e1020;
+  }
+
+  .blask-btn-quiet:hover:not(:disabled, [aria-disabled='true']) {
+    background: #e0e6ff;
+  }
+
+  .blask-btn-quiet:disabled {
+    background: #f1f2f7;
+    color: #6b7088;
+  }
+
+  [data-theme='dark'] .blask-btn-quiet {
+    background: #141c55;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-btn-quiet:hover:not(:disabled, [aria-disabled='true']) {
+    background: #1f2a7a;
+  }
+
+  [data-theme='dark'] .blask-btn-quiet:disabled {
+    background: #0e1442;
+    color: #8f96c8;
+  }
+
+  /* Destructive confirmation: the one warning colour. */
+  .blask-btn-danger {
+    background: #c72a5c;
+    color: #ffffff;
+  }
+
+  .blask-btn-danger:hover:not(:disabled, [aria-disabled='true']),
+  .blask-btn-danger[data-busy='true'] {
+    background: #a8204b;
+    box-shadow: 0 8px 20px -10px rgb(199 42 92 / 0.6);
+  }
+
+  .blask-btn-danger:disabled {
+    background: #ecc3d0;
+    color: #4a4f66;
+  }
+
+  [data-theme='dark'] .blask-btn-danger:hover:not(:disabled, [aria-disabled='true']),
+  [data-theme='dark'] .blask-btn-danger[data-busy='true'] {
+    background: #d8396c;
+    box-shadow: 0 8px 24px -8px rgb(255 122 162 / 0.5);
+  }
+
+  [data-theme='dark'] .blask-btn-danger:disabled {
+    background: #3a1a4a;
+    color: #c3c9f5;
+  }
+
+  /* A round icon-only button (close, header actions); give it an aria-label. */
+  .blask-icon-btn {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    color: var(--color-blask-graphite);
+    cursor: pointer;
+    transition:
+      background-color 200ms ease-out,
+      color 200ms ease-out,
+      transform 200ms var(--blask-ease);
+  }
+
+  .blask-icon-btn:hover {
+    background: var(--color-blask-mist);
+    color: var(--color-blask-ink);
+  }
+
+  .blask-icon-btn:active {
+    background: var(--color-blask-haze);
+    transform: scale(0.94);
+  }
+
+  /* ---- Fields ------------------------------------------------------------------------------ */
+
+  .blask-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 0;
+  }
+
+  .blask-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .blask-hint {
+    color: var(--color-blask-graphite);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .blask-field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    color: var(--color-blask-raspberry);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .blask-input {
+    width: 100%;
+    min-width: 0;
+    height: 3rem;
+    padding: 0 0.875rem;
+    background: #ffffff;
+    border: 1px solid #daddea;
+    border-radius: 12px;
+    color: #0e1020;
+    font-size: 1rem;
+    transition:
+      border-color 160ms ease-out,
+      box-shadow 160ms ease-out;
+  }
+
+  textarea.blask-input {
+    height: auto;
+    min-height: 5.5rem;
+    padding: 0.75rem 0.875rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  select.blask-input {
+    padding-right: 2.75rem;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .blask-input::placeholder {
+    color: #6b7088;
+  }
+
+  .blask-input:hover {
+    border-color: #b6bbd2;
+  }
+
+  .blask-input:focus-visible {
+    outline: none;
+    border-color: #2b3bff;
+    box-shadow: 0 0 0 3px rgb(43 59 255 / 0.22);
+  }
+
+  .blask-input[aria-invalid='true'] {
+    border-color: var(--color-blask-raspberry);
+  }
+
+  .blask-input[aria-invalid='true']:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-blask-raspberry) 22%, transparent);
+  }
+
+  .blask-input:disabled {
+    background: #f1f2f7;
+    color: #6b7088;
+    cursor: not-allowed;
+  }
+
+  [data-theme='dark'] .blask-input {
+    background: #0a0f36;
+    border-color: #2a3370;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-input::placeholder {
+    color: #8f96c8;
+  }
+
+  [data-theme='dark'] .blask-input:hover {
+    border-color: #3d4aa8;
+  }
+
+  [data-theme='dark'] .blask-input:focus-visible {
+    border-color: #8e9bff;
+    box-shadow: 0 0 0 3px rgb(142 155 255 / 0.25);
+  }
+
+  [data-theme='dark'] .blask-input[aria-invalid='true'] {
+    border-color: var(--color-blask-raspberry);
+  }
+
+  [data-theme='dark'] .blask-input:disabled {
+    background: #0e1442;
+    color: #8f96c8;
+  }
+
+  /* The select's chevron, drawn in the text colour of the theme. */
+  .blask-select {
+    position: relative;
+    display: block;
+  }
+
+  .blask-select::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0.875rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    translate: 0 -50%;
+    background: var(--color-blask-graphite);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    pointer-events: none;
+  }
+
+  /*
+   * Native checkboxes and radios, drawn by the kit so they read as lit Blask controls in both
+   * themes (the browser's own box turns grey on the dark palette): a cobalt-edged box, filled
+   * cobalt with the surface's colour as the mark when on. Sized for the hand by their label.
+   */
+  .blask-check {
+    --blask-check-edge: color-mix(
+      in oklab,
+      var(--color-blask-cobalt) 72%,
+      var(--color-blask-white)
+    );
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
+    margin: 0;
+    border: 1.5px solid var(--blask-check-edge);
+    border-radius: 0.3125rem;
+    background: var(--color-blask-white);
+    color: var(--color-blask-white);
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .blask-check[type='radio'] {
+    border-radius: 50%;
+  }
+
+  .blask-check::before {
+    content: '';
+    width: 0.75rem;
+    height: 0.75rem;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    scale: 0;
+    transition: scale 0.15s var(--blask-ease);
+  }
+
+  .blask-check:indeterminate::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+  }
+
+  .blask-check[type='radio']::before {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    mask: none;
+  }
+
+  .blask-check:hover:not(:disabled) {
+    border-color: var(--color-blask-cobalt);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-blask-cobalt) 16%, transparent);
+  }
+
+  .blask-check:is(:checked, :indeterminate) {
+    border-color: var(--color-blask-cobalt);
+    background: var(--color-blask-cobalt);
+  }
+
+  .blask-check:is(:checked, :indeterminate)::before {
+    scale: 1;
+  }
+
+  .blask-check:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  @media (forced-colors: active) {
+    .blask-check {
+      appearance: auto;
+    }
+
+    .blask-check::before {
+      content: none;
+    }
+  }
+
+  /* A checkbox with its label (and an optional description under it). */
+  .blask-checkline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    padding-block: 0.6875rem;
+    cursor: pointer;
+  }
+
+  .blask-checkline > .blask-check {
+    margin-top: 0.1875rem;
+  }
+
+  .blask-checkline:has(:disabled) {
+    color: var(--color-blask-graphite);
+    cursor: not-allowed;
+  }
+
+  /* ---- Chips ------------------------------------------------------------------------------- */
+
+  .blask-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 1.75rem;
+    padding: 0 0.625rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .blask-chip-cobalt {
+    background: #e8edff;
+    color: #1d29d6;
+  }
+
+  [data-theme='dark'] .blask-chip-cobalt {
+    background: #1a2373;
+    color: #d4d9ff;
+  }
+
+  .blask-chip-line {
+    border: 1px solid #daddea;
+    background: #ffffff;
+    color: #4a4f66;
+  }
+
+  [data-theme='dark'] .blask-chip-line {
+    border-color: #2a3370;
+    background: transparent;
+    color: #c3c9f5;
+  }
+
+  /* Złoto as light: on mist with a haze ring. */
+  .blask-chip-light {
+    background: var(--color-blask-mist);
+    color: var(--color-blask-ink);
+    box-shadow: inset 0 0 0 1px var(--color-blask-haze);
+  }
+
+  /* Statuses: to do = lavender outline, done = cobalt lit, overdue = raspberry. */
+  .blask-chip-todo {
+    background: var(--color-blask-white);
+    color: var(--color-blask-cobalt-deep);
+    box-shadow: inset 0 0 0 1px #8e9bff;
+  }
+
+  .blask-chip-done {
+    background: #2b3bff;
+    color: #fbfaff;
+    box-shadow: 0 0 12px -2px rgb(43 59 255 / 0.45);
+  }
+
+  .blask-chip-overdue {
+    background: #fcf0f4;
+    color: #c72a5c;
+  }
+
+  [data-theme='dark'] .blask-chip-overdue {
+    background: rgb(255 122 162 / 0.12);
+    color: #ff7aa2;
+  }
+
+  /* ---- Selection ---------------------------------------------------------------------------- */
+
+  /* A selectable row (a badge in a catalog, an amount): a label around a native radio, or a
+     button with aria-pressed. */
+  .blask-pick {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--color-blask-line);
+    border-radius: 12px;
+    background: var(--color-blask-white);
+    color: var(--color-blask-ink);
+    font-size: 0.9375rem;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color 160ms ease-out,
+      background-color 160ms ease-out,
+      box-shadow 160ms ease-out;
+  }
+
+  .blask-pick:hover {
+    border-color: var(--color-blask-peri);
+    background: color-mix(in srgb, var(--color-blask-mist) 45%, var(--color-blask-white));
+  }
+
+  .blask-pick:has(:checked),
+  .blask-pick[aria-pressed='true'] {
+    border-color: var(--color-blask-cobalt);
+    background: var(--color-blask-peri-soft);
+    box-shadow: inset 0 0 0 1px var(--color-blask-cobalt);
+  }
+
+  .blask-pick:has(:focus-visible) {
+    outline: 2px solid var(--blask-focus);
+    outline-offset: 2px;
+  }
+
+  /* The native radio stays for keyboard and screen readers; the row shows the choice. */
+  .blask-pick > input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * Segmented control: labels around native radios (arrow keys move the choice) or buttons with
+   * role="radio" + aria-checked. Pills: toggle buttons with aria-pressed (or aria-checked in a
+   * radiogroup). The chosen one is lit, not black.
+   */
+  .blask-seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--color-blask-line);
+    border-radius: 999px;
+    background: var(--color-blask-white);
+  }
+
+  .blask-seg > label,
+  .blask-seg > button,
+  .blask-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding: 0 0.875rem;
+    border-radius: 999px;
+    color: var(--color-blask-graphite);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      color 320ms var(--blask-ease),
+      background-color 320ms var(--blask-ease),
+      box-shadow 320ms var(--blask-ease),
+      transform 320ms var(--blask-ease);
+  }
+
+  .blask-seg > label > input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .blask-seg > label:has(:focus-visible) {
+    outline: 2px solid var(--blask-focus);
+    outline-offset: 2px;
+  }
+
+  .blask-pill {
+    min-width: 3.25rem;
+    border: 1px solid var(--color-blask-line);
+    background: var(--color-blask-white);
+  }
+
+  .blask-seg > label:hover,
+  .blask-seg > button:hover,
+  .blask-pill:hover:not(:disabled) {
+    background: var(--color-blask-mist);
+    color: var(--color-blask-ink);
+  }
+
+  .blask-seg > label:has(:checked),
+  .blask-seg > button[aria-checked='true'],
+  .blask-pill:is([aria-pressed='true'], [aria-checked='true']) {
+    border-color: transparent;
+    background: var(--color-blask-peri-soft);
+    color: var(--color-blask-cobalt-deep);
+    font-weight: 650;
+    box-shadow:
+      inset 0 0 0 1px var(--color-blask-lavender),
+      0 0 12px -4px rgb(43 59 255 / 0.4);
+  }
+
+  .blask-seg > label:active,
+  .blask-seg > button:active,
+  .blask-pill:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .blask-pill:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  /* ---- Notices ----------------------------------------------------------------------------- */
+
+  .blask-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+  }
+
+  .blask-notice[data-tone='success'] {
+    background: var(--color-blask-peri-soft);
+    box-shadow: inset 0 0 0 1px var(--color-blask-haze);
+  }
+
+  .blask-notice[data-tone='success'] > svg {
+    color: var(--color-blask-cobalt);
+  }
+
+  .blask-notice[data-tone='info'] {
+    background: var(--color-blask-paper);
+    box-shadow: inset 0 0 0 1px var(--color-blask-line);
+  }
+
+  .blask-notice[data-tone='info'] > svg {
+    color: var(--color-blask-graphite);
+  }
+
+  .blask-notice:is([data-tone='error'], [data-tone='partial']) {
+    background: #fcf0f4;
+    box-shadow: inset 0 0 0 1px #f3c9d7;
+  }
+
+  .blask-notice:is([data-tone='error'], [data-tone='partial']) > svg {
+    color: var(--color-blask-raspberry);
+  }
+
+  [data-theme='dark'] .blask-notice:is([data-tone='error'], [data-tone='partial']) {
+    background: rgb(255 122 162 / 0.1);
+    box-shadow: inset 0 0 0 1px rgb(255 122 162 / 0.32);
+  }
+
+  /* ---- Loading and entrances --------------------------------------------------------------- */
+
+  /* Loading placeholders: a quiet band of light that passes over. */
+  .blask-skeleton {
+    display: inline-block;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        var(--color-blask-mist) 0%,
+        var(--color-blask-haze) 40%,
+        var(--color-blask-mist) 80%
+      )
+      0 0 / 300% 100%;
+  }
+
+  /* Popovers, menus, inline forms, notices and toasts arrive the same way: a short soft rise. */
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-skeleton {
+      animation: blask-sheen 1.6s ease-in-out infinite;
+    }
+
+    .blask-pop {
+      animation: blask-pop-in 600ms var(--blask-ease) both;
+    }
+  }
+
+  @keyframes blask-sheen {
+    to {
+      background-position: -150% 0;
+    }
+  }
+
+  @keyframes blask-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  /* Light arrives one way everywhere: a soft glow that fades in and settles. */
+  @keyframes blask-glow-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+
+  /* An empty list or a first-run state: what is missing, why, and the one way forward. */
+  .blask-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .blask-empty {
+      padding: 2rem;
+    }
+  }
+
+  .blask-empty__mark {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: var(--color-blask-mist);
+    color: var(--color-blask-cobalt-deep);
+    box-shadow: inset 0 0 0 1px var(--color-blask-haze);
+  }
+
+  /* ---- Dialog (native <dialog>, opened with showModal) ------------------------------------- */
+
+  .blask-dialog {
+    margin: auto;
+    width: min(28rem, calc(100% - 2rem));
+    max-height: min(100dvh - 2rem, 56rem);
+    padding: 0;
+    border: 1px solid var(--blask-panel-border);
+    border-radius: 20px;
+    background: var(--blask-panel);
+    color: var(--color-blask-ink);
+    box-shadow: 0 30px 70px -24px rgb(14 16 32 / 0.4);
+  }
+
+  .blask-dialog--wide {
+    width: min(44rem, calc(100% - 2rem));
+  }
+
+  .blask-dialog[open]:has(> .blask-dialog__body) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blask-dialog::backdrop {
+    background: rgb(14 16 32 / 0.38);
+    backdrop-filter: blur(3px);
+  }
+
+  [data-theme='dark'] .blask-dialog {
+    box-shadow:
+      0 40px 90px -30px rgb(2 4 24 / 0.9),
+      0 0 60px -30px rgb(108 59 244 / 0.6);
+  }
+
+  [data-theme='dark'] .blask-dialog::backdrop {
+    background: rgb(2 4 24 / 0.72);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-dialog[open] {
+      animation: blask-dialog-in 640ms var(--blask-ease) both;
+    }
+
+    .blask-dialog[open]::backdrop {
+      animation: blask-dialog-fade 360ms ease-out both;
+    }
+  }
+
+  @keyframes blask-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+    }
+  }
+
+  @keyframes blask-dialog-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .blask-dialog__head {
+    display: flex;
+    flex: none;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1rem 0.75rem 1.5rem;
+  }
+
+  .blask-dialog__title {
+    font-size: 1.25rem;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .blask-dialog__lede {
+    margin-top: 0.375rem;
+    color: var(--color-blask-graphite);
+    font-size: 0.9375rem;
+  }
+
+  .blask-dialog__head > .blask-icon-btn {
+    margin-top: -0.375rem;
+  }
+
+  .blask-dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.5rem 1.5rem 1.5rem;
+    scrollbar-color: var(--color-blask-peri) transparent;
+  }
+
+  .blask-dialog__foot {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-top: 1px solid var(--blask-divider);
+  }
+
+  /* ---- Menus and toasts -------------------------------------------------------------------- */
+
+  /* A small popover under its button (the account menu); a disclosure, not an ARIA menu. */
+  .blask-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 40;
+    width: min(18rem, calc(100vw - 2rem));
+    padding: 0.5rem;
+    border: 1px solid var(--blask-panel-border);
+    border-radius: 16px;
+    background: var(--blask-panel);
+    color: var(--color-blask-ink);
+    box-shadow: var(--blask-shadow-pop);
+  }
+
+  .blask-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 10px;
+    color: var(--color-blask-ink);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 160ms ease-out;
+  }
+
+  .blask-menu-item:hover {
+    background: var(--color-blask-mist);
+  }
+
+  /* A short confirmation at the bottom edge (shell: .blask-toast-dock) that leaves on its own. */
+  .blask-toast {
+    background: var(--color-blask-white);
+    color: var(--color-blask-ink);
+    border-radius: 14px;
+    box-shadow:
+      inset 0 0 0 1px var(--color-blask-haze),
+      0 14px 34px -14px rgb(43 59 255 / 0.35);
+  }
+
+  /* ---- Navigation inside a page: tabs, section links, breadcrumbs -------------------------- */
+
+  /* Section tabs (route links) on a hairline; the current one's glint lands on it. */
+  .blask-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding-bottom: 0.625rem;
+    overflow-x: auto;
+    overflow-y: clip;
+    border-bottom: 1px solid var(--blask-panel-border);
+    scrollbar-width: none;
+  }
+
+  .blask-tab {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.875rem;
+    border-radius: 999px;
+    color: var(--color-blask-graphite);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color 320ms var(--blask-ease),
+      background-color 320ms var(--blask-ease);
+  }
+
+  .blask-tab:hover {
+    background: var(--color-blask-mist);
+    color: var(--color-blask-ink);
+  }
+
+  .blask-tab[aria-current='page'] {
+    color: var(--color-blask-ink);
+    font-weight: 650;
+  }
+
+  .blask-tab[aria-current='page']:hover {
+    background: transparent;
+  }
+
+  /* The glint: a hairline of light from under the label down to the tabs' edge. */
+  .blask-tab[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% - 2px);
+    width: 2px;
+    height: 0.75rem;
+    margin-left: -1px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgb(175 192 255 / 0), #8e9bff 45%, #2b3bff);
+    box-shadow: 0 0 6px rgb(43 59 255 / 0.3);
+  }
+
+  [data-theme='dark'] .blask-tab[aria-current='page']::after {
+    background: linear-gradient(180deg, rgb(142 155 255 / 0), #c9d0ff 45%, #8e9bff);
+    box-shadow: 0 0 8px rgb(142 155 255 / 0.55);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-tab[aria-current='page']::after {
+      transform-origin: top;
+      animation: blask-glint-drop 900ms var(--blask-ease) both;
+    }
+  }
+
+  @keyframes blask-glint-drop {
+    from {
+      transform: scaleY(0);
+      opacity: 0;
+    }
+  }
+
+  /* Section links inside a page (the Panel's subnav): the same glint, shorter. Use
+     aria-current="location" for the section in view. */
+  .blask-sublink {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-blask-graphite);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 320ms var(--blask-ease);
+  }
+
+  .blask-sublink:hover {
+    color: var(--color-blask-ink);
+  }
+
+  .blask-sublink[aria-current='location'] {
+    color: var(--color-blask-ink);
+    font-weight: 650;
+  }
+
+  .blask-sublink[aria-current='location']::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -1px;
+    width: 2px;
+    height: 12px;
+    margin-left: -1px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgb(142 155 255 / 0), var(--color-blask-cobalt));
+    box-shadow: 0 0 8px rgb(43 59 255 / 0.35);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-sublink[aria-current='location']::after {
+      animation: blask-glow-in 700ms var(--blask-ease) both;
+    }
+  }
+
+  /* One line: the links up keep their width, the current page (last) truncates on phones. */
+  .blask-crumbs ol {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-blask-graphite);
+    font-size: 0.875rem;
+  }
+
+  .blask-crumbs li {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .blask-crumbs li:last-child {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* Decorative divider: the empty alt text keeps it out of the accessibility tree. */
+  .blask-crumbs li + li::before {
+    content: '/' / '';
+    margin-inline-end: 0.5rem;
+    color: var(--color-blask-peri);
+  }
+
+  .blask-crumbs a {
+    color: var(--color-blask-graphite);
+    text-decoration: underline;
+    text-decoration-color: var(--color-blask-peri);
+    transition:
+      color 160ms ease-out,
+      text-decoration-color 160ms ease-out;
+  }
+
+  .blask-crumbs a:hover {
+    color: var(--color-blask-ink);
+    text-decoration-color: currentColor;
+  }
+
+  .blask-crumbs [aria-current='page'] {
+    overflow: hidden;
+    color: var(--color-blask-ink);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- Tables: rows become labelled cards when the table's container is narrow ------------- */
+
+  .blask-table-wrap {
+    container-type: inline-size;
+    overflow-x: auto;
+  }
+
+  .blask-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  .blask-table :is(th, td) {
+    padding: 0.75rem 1.25rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .blask-table thead th {
+    padding-block: 0.625rem;
+    border-bottom: 1px solid var(--blask-divider);
+    color: var(--color-blask-graphite);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .blask-table tbody tr {
+    border-top: 1px solid var(--blask-divider);
+    transition: background-color 160ms var(--blask-ease);
+  }
+
+  .blask-table tbody tr:first-child {
+    border-top: 0;
+  }
+
+  .blask-table tbody tr:hover {
+    background: var(--blask-row-hover);
+  }
+
+  .blask-table [data-numeric] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .blask-table [data-actions] {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  @container (width < 36rem) {
+    .blask-table,
+    .blask-table :is(tbody, tr, td) {
+      display: block;
+    }
+
+    /* Column headers are replaced by per-cell labels below. */
+    .blask-table thead {
+      display: none;
+    }
+
+    .blask-table tbody tr {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.875rem 1.25rem;
+    }
+
+    .blask-table tbody td {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0;
+      text-align: right;
+    }
+
+    .blask-table tbody td:not([data-label]) {
+      text-align: left;
+    }
+
+    .blask-table td[data-label]::before {
+      content: attr(data-label);
+      color: var(--color-blask-graphite);
+      text-align: left;
+    }
+
+    .blask-table td[data-actions] {
+      justify-content: flex-end;
+      padding-top: 0.375rem;
+    }
+  }
+
+  /* ---- Phones: every control is at least 44 × 44 px under the finger ------------------------ */
+
+  @media (width < 40rem) {
+    .blask-btn-sm {
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+    }
+
+    .blask-icon-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .blask-tab,
+    .blask-sublink,
+    .blask-seg > label,
+    .blask-seg > button,
+    .blask-pill {
+      min-height: 2.75rem;
+    }
+
+    /* Taller to the finger, not to the eye: the line keeps its place. */
+    .blask-crumbs a {
+      display: inline-block;
+      padding-block: 0.6875rem;
+      margin-block: -0.6875rem;
+    }
+  }
+}

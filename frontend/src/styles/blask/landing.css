@@ -1,0 +1,1022 @@
+/*
+ * The landing with the login (src/pages/LoginPage, src/pages/landing/**): paper, a long dusk into
+ * the ribbon's night, and the night to the end. With the live sky (`data-sky='live'` on the root)
+ * the story is transparent over the sticky shader, which paints the ground from the
+ * `data-sky-dusk` stretch; without it (reduced motion, no WebGL 2) every chapter paints its own
+ * ground: the dusk as a long gradient, the night chapters #060a2b. Night chapters carry
+ * `.blask-on-night` (pearl headings, moon text, lavender light). The closing and the footer sit
+ * over the finale's own canvas (helix, horizon, the glowing key word). Nagrody (blask-ng-) and
+ * Punkty (blask-zl-, the arch closing into the coin) follow at the end.
+ *
+ * The landing keeps the lab's palette in both modes: paper and white product fragments stay light
+ * even in dark mode (the tokens are pinned on the root and on the fragments), while the hero, the
+ * login cards and the ground turn to the night.
+ */
+@layer components {
+  /* Overscroll past the end shows the night; above the dusk, the paper (set by Landing). */
+  html[data-blask-ground='night']:has(.blask-landing) {
+    background: #060a2b;
+    scrollbar-color: #1a2373 #060a2b;
+  }
+
+  .blask-landing {
+    --blask-gutter: 1.25rem;
+    --blask-axis: calc(var(--blask-gutter) + 5px);
+    /* The dusk, paper to night (the sky's ramp, as CSS stops over a stretch). */
+    --blask-dusk-ramp:
+      #f6f7fb 0%, #eef0fe 10%, #dde3ff 22%, #afc0ff 35%, #6459c3 50%, #1a2373 66%, #0c1240 82%,
+      #060a2b 96%;
+    position: relative;
+  }
+
+  @media (min-width: 640px) {
+    .blask-landing {
+      --blask-gutter: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .blask-landing {
+      --blask-axis: 50%;
+    }
+  }
+
+  /* Where the beam stands; the sky reads it, every line uses it. */
+  .blask-axis {
+    position: absolute;
+    top: 0;
+    left: var(--blask-axis);
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  .blask-landing .blask-input[aria-invalid='true'] {
+    border-color: #c72a5c;
+  }
+
+  .blask-landing .blask-input[aria-invalid='true']:focus-visible {
+    box-shadow: 0 0 0 3px rgb(199 42 92 / 0.18);
+  }
+
+  /* An amount's `G`: cobalt on paper and in product fragments, lavender on the night. */
+  .blask-amount-g {
+    color: #2b3bff;
+  }
+
+  /* ---- The night side --------------------------------------------------------------------- */
+
+  .blask-on-night {
+    color: #fbfaff;
+  }
+
+  .blask-on-night .blask-lede,
+  .blask-on-night .blask-copy {
+    color: #c3c9f5;
+  }
+
+  .blask-on-night .blask-amount-g {
+    color: #8e9bff;
+  }
+
+  .blask-on-night ::selection {
+    background: #2b3bff;
+    color: #fbfaff;
+  }
+
+  .blask-on-night :focus-visible {
+    outline-color: #8e9bff;
+  }
+
+  .blask-on-night .blask-fragment .blask-amount-g {
+    color: #2b3bff;
+  }
+
+  .blask-on-night .blask-fragment :focus-visible {
+    outline-color: #2b3bff;
+  }
+
+  /* The closing lets the finale's canvas show through. */
+  [data-sky='still'] .blask-on-night:not([data-finale-start]) {
+    background-color: #060a2b;
+  }
+
+  /* Rank stars: pearl on the night (the light-mode chapters after the dusk too). */
+  .blask-on-night .blask-star {
+    --blask-star-a: #ffffff;
+    --blask-star-b: #c9d0ff;
+    --blask-star-core: #ffffff;
+    --blask-star-halo: #a5b0ff;
+    --blask-star-glow: 1.45;
+    --blask-star-glint: #e6e9ff;
+    --blask-star-ring: #afc0ff;
+    --blask-star-trail: #c3c9f5;
+    --blask-star-dim-fill: #111a52;
+    --blask-star-dim-line: #4654b8;
+  }
+
+  /*
+   * Product fragments are paper UI inside the night, in both modes: the paper palette, the paper
+   * star, ink display type. The login cards are not: in dark mode they are the app's dark surface.
+   */
+  .blask-fragment .blask-star,
+  [data-theme='dark'] .blask-fragment:not(.blask-login) .blask-star {
+    --blask-star-a: #2b3bff;
+    --blask-star-b: #6c3bf4;
+    --blask-star-core: #fbfaff;
+    --blask-star-halo: #8e9bff;
+    --blask-star-glow: 1.15;
+    --blask-star-glint: #8e9bff;
+    --blask-star-ring: #6c7bff;
+    --blask-star-trail: #2b3bff;
+    --blask-star-dim-fill: #eef0fe;
+    --blask-star-dim-line: #a3b1f5;
+  }
+
+  [data-theme='dark'] .blask-fragment:not(.blask-login) {
+    --color-blask-paper: #f6f7fb;
+    --color-blask-white: #ffffff;
+    --color-blask-mist: #eef0fe;
+    --color-blask-haze: #dde3ff;
+    --color-blask-peri-soft: #e8edff;
+    --color-blask-peri: #afc0ff;
+    --color-blask-line: #daddea;
+    --color-blask-ink: #0e1020;
+    --color-blask-graphite: #4a4f66;
+    --color-blask-cobalt: #2b3bff;
+    --color-blask-cobalt-deep: #1d29d6;
+    --color-blask-iris: #6c3bf4;
+    --color-blask-raspberry: #c72a5c;
+    --blask-focus: #2b3bff;
+    color-scheme: light;
+    box-shadow:
+      0 0 0 1px rgb(195 201 245 / 0.16),
+      0 0 40px -6px rgb(120 136 255 / 0.35),
+      0 40px 80px -36px rgb(0 0 0 / 0.55);
+  }
+
+  [data-theme='dark'] .blask-fragment:not(.blask-login) .blask-display {
+    color: inherit;
+  }
+
+  [data-theme='dark'] .blask-fragment:not(.blask-login) .blask-chip-cobalt {
+    background: #e8edff;
+    color: #1d29d6;
+  }
+
+  [data-theme='dark'] .blask-fragment:not(.blask-login) ::selection {
+    background: #afc0ff;
+    color: #0e1020;
+  }
+
+  /* ---- Header: its colours crossfade with the ground under it ----------------------------- */
+
+  .blask-header {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 40;
+    color: #0e1020;
+    transition:
+      transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 400ms ease-out,
+      background-color 400ms ease-out,
+      box-shadow 400ms ease-out;
+  }
+
+  .blask-header .blask-headlink {
+    transition: color 400ms ease-out;
+  }
+
+  .blask-header[data-hidden='true'] {
+    transform: translateY(-110%);
+  }
+
+  .blask-header[data-scrolled='true'] {
+    background-color: rgb(246 247 251 / 0.78);
+    box-shadow: 0 1px 0 rgb(218 221 234 / 0.8);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+
+  .blask-header[data-tone='night'] {
+    color: #fbfaff;
+  }
+
+  .blask-header[data-tone='night'] .blask-headlink {
+    color: #c3c9f5;
+  }
+
+  .blask-header[data-tone='night'] .blask-headlink:hover {
+    color: #fbfaff;
+  }
+
+  .blask-header[data-tone='night'] :focus-visible {
+    outline-color: #8e9bff;
+  }
+
+  .blask-header[data-tone='night'][data-scrolled='true'] {
+    background-color: rgb(6 10 43 / 0.72);
+    box-shadow: 0 1px 0 rgb(142 155 255 / 0.16);
+  }
+
+  /* ---- Zmierzch: the dusk stretch and the beam's stage ------------------------------------- */
+
+  .blask-rise {
+    position: relative;
+  }
+
+  .blask-dusk {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 100svh;
+    pointer-events: none;
+  }
+
+  .blask-rise-stage {
+    position: relative;
+    padding: 108svh 0 6vh;
+    background:
+      linear-gradient(180deg, var(--blask-dusk-ramp)) top / 100% 100svh no-repeat,
+      #060a2b;
+  }
+
+  .blask-ground {
+    position: absolute;
+    top: 100svh;
+    left: var(--blask-axis);
+    width: 1px;
+    height: 1px;
+  }
+
+  /* Live: the dusk falls while the stage holds the beam (it stands up within this stretch, so the
+     screen is never empty); the words come with the night. */
+  [data-sky='live'] .blask-rise {
+    height: 230svh;
+  }
+
+  /* The veil behind the chapter's words (live only; it fades in with the night). */
+  .blask-rise-veil {
+    display: none;
+  }
+
+  [data-sky='live'] .blask-rise-veil {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: linear-gradient(
+      180deg,
+      transparent 12%,
+      rgb(6 10 43 / 0.55) 26%,
+      rgb(6 10 43 / 0.55) 62%,
+      transparent 80%
+    );
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    [data-sky='live'] .blask-rise-veil {
+      background: linear-gradient(
+        90deg,
+        rgb(6 10 43 / 0.62) 0%,
+        rgb(6 10 43 / 0.3) 32%,
+        transparent 48%
+      );
+    }
+  }
+  [data-sky='live'] .blask-dusk {
+    height: 150svh;
+  }
+
+  [data-sky='live'] .blask-rise-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding: 0;
+    background: none;
+  }
+
+  [data-sky='live'] .blask-ground {
+    top: auto;
+    bottom: 12%;
+  }
+
+  [data-sky='live'] .blask-rise-copy {
+    position: absolute;
+    inset-inline: 0;
+    top: 24%;
+  }
+
+  @media (min-width: 1024px) {
+    [data-sky='live'] .blask-rise-copy {
+      top: 30%;
+    }
+  }
+
+  [data-sky='live'] .blask-rise-copy.blask-on-night {
+    background: none;
+  }
+
+  /* The beam as a still drawing: the shaft, glow and landing splash, in pearl and lavender. */
+  .blask-beam-still {
+    position: absolute;
+    top: 0;
+    left: var(--blask-axis);
+    height: 100svh;
+    width: 3px;
+    translate: -1.5px 0;
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgb(251 250 255 / 0), #fbfaff 45%);
+    box-shadow:
+      0 0 12px 3px rgb(142 155 255 / 0.85),
+      0 0 60px 18px rgb(43 59 255 / 0.35);
+    pointer-events: none;
+  }
+
+  .blask-beam-still::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -22px;
+    width: min(520px, 90vw);
+    height: 44px;
+    translate: -50% 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(closest-side, #fbfaff 0, rgb(251 250 255 / 0) 22%),
+      radial-gradient(closest-side, rgb(142 155 255 / 0.7), rgb(43 59 255 / 0.2) 55%, transparent);
+  }
+
+  [data-sky='live'] .blask-beam-still {
+    display: none;
+  }
+
+  /* ---- The line of light and its nodes ------------------------------------------------------ */
+
+  .blask-line {
+    position: absolute;
+    left: var(--blask-axis);
+    width: 1px;
+    translate: -0.5px 0;
+    background: rgb(195 201 245 / 0.12);
+    pointer-events: none;
+  }
+
+  .blask-line--ladder {
+    left: 5.5px;
+  }
+
+  .blask-hline {
+    position: absolute;
+    height: 1px;
+    background: rgb(195 201 245 / 0.12);
+    pointer-events: none;
+  }
+
+  .blask-line-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #fbfaff, #b6c0ff 60%, #fbfaff);
+    box-shadow:
+      0 0 6px rgb(120 136 255 / 0.9),
+      0 0 18px rgb(120 136 255 / 0.45);
+    transform-origin: top;
+  }
+
+  .blask-hline .blask-line-fill {
+    background: linear-gradient(90deg, #b6c0ff, #fbfaff);
+    transform-origin: left;
+  }
+
+  .blask-node {
+    position: absolute;
+    left: var(--blask-axis);
+    display: block;
+    width: 11px;
+    height: 11px;
+    translate: -50% 0;
+    border-radius: 999px;
+    background: #fbfaff;
+    box-shadow:
+      0 0 0 3px #060a2b,
+      0 0 10px 2px rgb(120 136 255 / 0.9),
+      0 0 30px 6px rgb(120 136 255 / 0.35);
+    transition:
+      background-color 400ms ease-out,
+      box-shadow 600ms ease-out;
+  }
+
+  .blask-node[data-lit='false'] {
+    background: #1a2373;
+    box-shadow:
+      0 0 0 3px #060a2b,
+      0 0 0 4px rgb(195 201 245 / 0.25);
+  }
+
+  /* The ignition: a thin ring flares out of the node as the light reaches it. */
+  .blask-node::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    border: 1px solid #c3c9f5;
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-node[data-lit='true']::after {
+      animation: blask-flare 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+  }
+
+  @keyframes blask-flare {
+    0% {
+      opacity: 0.95;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(4.2);
+    }
+  }
+
+  .blask-node--ladder {
+    left: 0;
+    top: 0.35rem;
+    translate: 0 0;
+  }
+
+  @media (min-width: 1024px) {
+    .blask-node--ladder {
+      top: 0;
+    }
+  }
+
+  .blask-lit-card {
+    transition:
+      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+      translate 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blask-lit-card[data-lit='false'] {
+    opacity: 0.3;
+    translate: 0 12px;
+  }
+
+  /* Product fragments: crisp white UI lit by the night around it. */
+  .blask-fragment {
+    color: #0e1020;
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 1px rgb(195 201 245 / 0.16),
+      0 0 40px -6px rgb(120 136 255 / 0.35),
+      0 40px 80px -36px rgb(0 0 0 / 0.55);
+  }
+
+  /* ---- Ranga: the blinds stage --------------------------------------------------------------- */
+
+  .blask-rank-pin {
+    position: relative;
+  }
+
+  .blask-rank-stage {
+    position: relative;
+    isolation: isolate;
+    height: 100svh;
+    min-height: 600px;
+    overflow: hidden;
+  }
+
+  [data-sky='live'] .blask-rank-pin {
+    height: 250svh;
+  }
+
+  [data-sky='live'] .blask-rank-stage {
+    position: sticky;
+    top: 0;
+  }
+
+  .blask-rank-veil {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      180deg,
+      rgb(6 10 43 / 0.78) 0%,
+      rgb(6 10 43 / 0.35) 30%,
+      transparent 45%,
+      transparent 55%,
+      rgb(6 10 43 / 0.4) 70%,
+      rgb(6 10 43 / 0.82) 100%
+    );
+  }
+
+  /* The blinds as a still: slats over a broad lavender light (the sky paints them when live). */
+  .blask-blinds-still {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgb(6 10 43 / 0) 0 34px,
+        rgb(6 10 43 / 0.72) 40px 50px,
+        rgb(6 10 43 / 0) 56px 62px
+      ),
+      radial-gradient(
+        34% 30% at 60% 48%,
+        #fbfaff 0%,
+        #8e9bff 32%,
+        rgb(108 59 244 / 0.55) 60%,
+        rgb(108 59 244 / 0) 100%
+      ),
+      #060a2b;
+  }
+
+  [data-sky='live'] .blask-blinds-still {
+    display: none;
+  }
+
+  .blask-rank-word {
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-stretch: 85%;
+    font-weight: 650;
+    font-size: clamp(4.5rem, 15vw, 13rem);
+    letter-spacing: -0.035em;
+    line-height: 0.9;
+    color: #fbfaff;
+    white-space: nowrap;
+    text-shadow:
+      0 0 2px rgb(6 10 43 / 0.5),
+      0 0 50px rgb(6 10 43 / 0.75);
+  }
+
+  /* ---- The finale: the key word over the horizon ---------------------------------------------- */
+
+  .blask-finale-footer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    color: #c3c9f5;
+  }
+
+  .blask-finale-stage {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 62svh;
+    padding: 18svh var(--blask-gutter) 19svh;
+  }
+
+  .blask-finale-word-line {
+    text-align: center;
+  }
+
+  /*
+   * The key word: real text. As CSS it already glows (pearl core, azure and iris fringes, a
+   * lavender and cobalt bloom); once the finale's canvas draws it, the DOM copy turns transparent.
+   */
+  .blask-finale-word {
+    display: inline-block;
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-stretch: 87.5%;
+    font-weight: 650;
+    font-size: clamp(3.25rem, 20vw, 12rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+    color: #ecebff;
+    text-shadow:
+      -0.025em 0 0.03em rgb(66 148 255 / 0.6),
+      0.025em 0 0.03em rgb(108 59 244 / 0.75),
+      0 0 0.12em rgb(142 155 255 / 0.75),
+      0 0 0.5em rgb(43 59 255 / 0.5);
+    transition:
+      color 900ms ease-out,
+      text-shadow 900ms ease-out;
+  }
+
+  .blask-finale-word[data-glow='gl'] {
+    color: transparent;
+    text-shadow: none;
+  }
+
+  .blask-finale-word::selection {
+    background: rgb(43 59 255 / 0.55);
+    color: #fbfaff;
+  }
+
+  /* The horizon as CSS, until (or unless) the canvas paints it. */
+  .blask-horizon-line {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      rgb(142 155 255 / 0) 4%,
+      rgb(142 155 255 / 0.55) 30%,
+      #fbfaff 50%,
+      rgb(142 155 255 / 0.55) 70%,
+      rgb(142 155 255 / 0) 96%
+    );
+    transition: opacity 900ms ease-out;
+  }
+
+  .blask-horizon-line::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: min(46rem, 90vw);
+    height: 9rem;
+    translate: -50% 0;
+    background: radial-gradient(
+      50% 100% at 50% 100%,
+      rgb(251 250 255 / 0.9) 0%,
+      rgb(142 155 255 / 0.45) 14%,
+      rgb(43 59 255 / 0.18) 45%,
+      rgb(43 59 255 / 0) 100%
+    );
+  }
+
+  .blask-finale-footer:has([data-glow='gl']) .blask-horizon-line {
+    opacity: 0;
+  }
+
+  /* ---- Dark mode: the whole page is the night ------------------------------------------------ */
+  /* The sky paints night from the top (uNight); without it the dusk stage paints night too. */
+
+  [data-theme='dark'] .blask-hero {
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-hero .blask-lede {
+    color: #c3c9f5;
+  }
+
+  [data-theme='dark'] .blask-hero .blask-btn-outline {
+    border-color: #8e9bff;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-hero .blask-btn-outline:hover:not(:disabled) {
+    background: rgb(142 155 255 / 0.16);
+    border-color: #fbfaff;
+  }
+
+  [data-theme='dark'] [data-sky='still'] .blask-rise-stage {
+    background: #060a2b;
+  }
+
+  /* The login cards as the app's dark surfaces: raised night, lavender hairlines, dark fields. */
+  [data-theme='dark'] .blask-landing .blask-login {
+    --color-blask-ink: #fbfaff;
+    --color-blask-graphite: #c3c9f5;
+    --color-blask-cobalt: #8e9bff;
+    --color-blask-line: #232c6e;
+    --color-blask-peri-soft: #151e5c;
+    --color-blask-raspberry: #ff7aa2;
+    background: #0c1240;
+    border-color: #232c6e;
+    color: #fbfaff;
+    box-shadow:
+      0 0 0 1px rgb(142 155 255 / 0.1),
+      0 0 48px -10px rgb(120 136 255 / 0.32),
+      0 24px 60px -24px rgb(2 4 24 / 0.85);
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input {
+    background: #0a0f36;
+    border-color: #2a3370;
+    color: #fbfaff;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input:hover {
+    border-color: #3d4aa8;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input:focus-visible {
+    border-color: #8e9bff;
+    box-shadow: 0 0 0 3px rgb(142 155 255 / 0.25);
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input[aria-invalid='true'] {
+    border-color: #ff7aa2;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input[aria-invalid='true']:focus-visible {
+    box-shadow: 0 0 0 3px rgb(255 122 162 / 0.22);
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-input:disabled {
+    background: #0c1240;
+    color: #8f96c8;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login button[aria-pressed]:active {
+    background: #1f2a7a;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login .blask-btn-primary[data-busy='true'] {
+    background: #3a49ff;
+  }
+
+  [data-theme='dark'] .blask-landing .blask-login :focus-visible {
+    outline-color: #8e9bff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blask-header,
+    .blask-header .blask-headlink,
+    .blask-lit-card,
+    .blask-node,
+    .blask-finale-word,
+    .blask-horizon-line {
+      transition: none;
+    }
+  }
+
+  /* ==== Nagrody and Punkty: the line of stars, the arch closing into the coin ==== */
+
+  .blask-ng,
+  .blask-zl {
+    background: #060a2b;
+    color: #c3c9f5;
+  }
+
+  [data-sky='live'] .blask-ng,
+  [data-sky='live'] .blask-zl {
+    background: transparent;
+  }
+
+  /* ---- Nagrody: the line of light and its stars ------------------------------------------ */
+
+  .blask-ng-track {
+    display: flex;
+    width: max-content;
+    height: 100svh;
+    align-items: center;
+  }
+
+  .blask-ng-hline,
+  .blask-ng-vline {
+    position: absolute;
+    background: rgb(195 201 245 / 0.12);
+  }
+
+  .blask-ng-hline {
+    height: 1px;
+  }
+
+  .blask-ng-vline {
+    width: 1px;
+  }
+
+  .blask-ng-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #fbfaff, #8e9bff 60%, #fbfaff);
+    box-shadow:
+      0 0 6px rgb(142 155 255 / 0.9),
+      0 0 18px rgb(142 155 255 / 0.45);
+    transform-origin: top;
+  }
+
+  .blask-ng-hline .blask-ng-fill {
+    background: linear-gradient(90deg, #8e9bff, #fbfaff);
+    transform-origin: left;
+  }
+
+  .blask-ng-spark {
+    transition:
+      opacity 700ms ease-out,
+      scale 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blask-ng-spark[data-lit='false'] {
+    opacity: 0.2;
+    scale: 0.55;
+  }
+
+  .blask-ng-card {
+    transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blask-ng-card[data-lit='false'] {
+    opacity: 0.3;
+  }
+
+  .blask-ng-amount {
+    color: #fbfaff;
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-stretch: 85%;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* The hairline plus. */
+  .blask-ng-plus {
+    margin-right: 0.04em;
+    font-weight: 200;
+  }
+
+  /* ---- Złoto: the arch, the coin, the rewards -------------------------------------------- */
+
+  .blask-zl {
+    position: relative;
+    overflow-x: clip;
+  }
+
+  /* The renderer's window: sticky over the whole chapter, taking no room in the flow. */
+  .blask-zl-canvas {
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    height: 100svh;
+    margin-bottom: -100svh;
+    pointer-events: none;
+    /* The bloom's widest haze would stop at the canvas edge: let it fade out instead. */
+    mask-image: linear-gradient(180deg, transparent, #000 9%, #000 91%, transparent);
+  }
+
+  .blask-zl-approach {
+    position: relative;
+    z-index: 1;
+    padding: 16svh var(--blask-gutter, 1.25rem) 6rem;
+    text-align: center;
+  }
+
+  /* Live: the arch holds a while under the title before it closes into the coin. */
+  .blask-zl[data-live='true'] .blask-zl-approach {
+    min-height: 115svh;
+    padding-bottom: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .blask-zl[data-live='true'] .blask-zl-approach {
+      min-height: 135svh;
+    }
+  }
+
+  .blask-zl-intro {
+    max-width: 52rem;
+    margin-inline: auto;
+  }
+
+  /* Where the apex of the arch stands, under the lede. */
+  .blask-zl-apex {
+    height: 1px;
+    margin-top: clamp(4rem, 14svh, 9rem);
+  }
+
+  .blask-zl-pin {
+    position: relative;
+    z-index: 1;
+  }
+
+  .blask-zl-stage {
+    display: grid;
+    width: 100%;
+    max-width: 82rem;
+    margin-inline: auto;
+    align-items: center;
+    gap: 3.5rem;
+    padding: 4rem var(--blask-gutter, 1.25rem) 8rem;
+  }
+
+  .blask-zl[data-live='true'] .blask-zl-stage {
+    padding-top: 22svh;
+  }
+
+  @media (min-width: 1024px) {
+    .blask-zl-stage {
+      min-height: 100svh;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: clamp(3rem, 6vw, 7rem);
+      padding-block: 4rem;
+    }
+
+    .blask-zl[data-live='true'] .blask-zl-pin {
+      height: 260svh;
+    }
+
+    .blask-zl[data-live='true'] .blask-zl-stage {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      padding-block: 4rem;
+    }
+  }
+
+  .blask-zl-coin-col {
+    display: grid;
+    place-items: center;
+  }
+
+  .blask-zl-coin {
+    position: relative;
+    width: min(78vw, 22rem);
+    aspect-ratio: 1;
+    container-type: inline-size;
+  }
+
+  @media (min-width: 1024px) {
+    .blask-zl-coin {
+      width: min(36vw, 64svh, 34rem);
+    }
+  }
+
+  /* Still mode: the renderer sits around the coin, with room for the bloom. */
+  .blask-zl-coin-canvas {
+    position: absolute;
+    inset: -45%;
+    pointer-events: none;
+    mask-image: radial-gradient(closest-side, #000 62%, transparent);
+  }
+
+  .blask-zl-face {
+    position: absolute;
+    inset: 17%;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: radial-gradient(
+      circle,
+      rgb(6 10 43 / 0.86) 0,
+      rgb(6 10 43 / 0.7) 58%,
+      rgb(6 10 43 / 0) 71%
+    );
+  }
+
+  .blask-zl-engraving {
+    position: absolute;
+    inset: 0;
+    color: rgb(142 155 255 / 0.32);
+  }
+
+  .blask-zl-balance {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .blask-zl-figure {
+    color: #fbfaff;
+    font-family: var(--font-blask-display);
+    font-optical-sizing: auto;
+    font-size: 15cqw;
+    font-stretch: 85%;
+    font-weight: 560;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+    text-shadow: 0 0 28px rgb(142 155 255 / 0.55);
+  }
+
+  .blask-zl-g {
+    color: #8e9bff;
+    font-size: 0.46em;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  .blask-zl-caption {
+    color: #c3c9f5;
+    font-size: clamp(0.8125rem, 3.2cqw, 1rem);
+  }
+
+  .blask-zl-copy {
+    position: relative;
+    max-width: 26rem;
+  }
+
+  @media (min-width: 1024px) {
+    .blask-zl-copy {
+      justify-self: start;
+    }
+  }
+
+  .blask-zl-row {
+    border-bottom: 1px solid rgb(195 201 245 / 0.16);
+    transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .blask-zl-row[data-on='false'] {
+    opacity: 0.38;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blask-ng-spark,
+    .blask-ng-card,
+    .blask-zl-row {
+      transition: none;
+    }
+  }
+}

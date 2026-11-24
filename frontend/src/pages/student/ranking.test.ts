@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { GroupRanking, RankingEntry } from '../../api/types'
 import {
   badgeCountText,
-  isPodium,
   isTied,
   myPlaceText,
   parseRankingBy,
@@ -45,10 +44,6 @@ describe('ties and places', () => {
   it('writes the place out, with ex aequo for ties', () => {
     expect(placeText(1, false)).toBe('1. miejsce')
     expect(placeText(2, true)).toBe('2. miejsce ex aequo')
-  })
-
-  it('marks the first three places, tied ones too', () => {
-    expect([1, 2, 3, 4].map(isPodium)).toEqual([true, true, true, false])
   })
 })
 

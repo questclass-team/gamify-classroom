@@ -12,6 +12,7 @@ export const StudentProfileContext = createContext<StudentProfileValue | null>(n
 /** The signed-in student's profile, shared by the header and the student pages. */
 export function useStudentProfile(): StudentProfileValue {
   const value = useContext(StudentProfileContext)
-  if (value === null) throw new Error('useStudentProfile must be used inside <StudentLayout>')
+  if (value === null)
+    throw new Error('useStudentProfile must be used inside the student <AppShell>')
   return value
 }

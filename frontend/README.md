@@ -47,26 +47,35 @@ Production builds never include the mocks.
   `AuthProvider` (renews the token 30 s before it expires, restores the session in a new tab from the
   cookie, logout also ends the session on the server), role guards.
 - `src/mocks/` – MSW handlers and mock data, dev only.
-- `src/styles/global.css` – Tailwind v4 `@theme` tokens (palette, fonts, radius, shadow) and the
-  few component styles that are clearer as CSS (`.data-table`, breadcrumbs, `<dialog>`). The
-  default Tailwind palette is disabled: use only theme colors (`bg-surface`, `text-muted`, …).
-- `src/components/ui.tsx` – shared building blocks (`Button`, `TextField`, `Alert`, `Table`,
-  `Panel`, titles); pages compose these instead of repeating long class lists. `Table` rows turn
-  into labelled cards in narrow containers (`data-label` on cells).
+- Design: Blask, light and dark, the only design of the app. `src/styles/blask.css` indexes the
+  layer in `src/styles/blask/`: `tokens.css` (the `--color-blask-*` / `--font-blask-*` palette and
+  fonts, the dark remap under `<html data-theme='dark'>`, the `dark:` variant; Tailwind's default
+  palette is off), `base.css` (document, focus, selection), `kit.css` (type, panels, buttons,
+  fields, chips, notices, toast, dialog, menu, tabs, breadcrumbs, tables, empty states),
+  `shell.css` (header, theme switch), `parts.css` (rank stars and line, history line) and one file
+  per area (`landing.css`, `student.css`, `teacher.css`); every class is prefixed `blask-`.
+- Themes: `src/lib/theme.ts` stores the choice in `localStorage` (`qc:theme`, else the system
+  setting) and keeps `data-theme` and `theme-color` in sync; `index.html` applies it before the
+  first paint.
+- Kit: `src/components/blask/` – `Button`/`LinkButton`, `TextField`/`TextArea`/`SelectField`/
+  `Checkbox`, `Panel`, `PageHeader`, `Breadcrumbs`/`RouteTabs`, `Table`, `Dialog`/
+  `BlaskConfirmDialog`, `EmptyState`/`LoadingState`, `BlaskNotice`, `ThemeSwitch`, `GroupCover`
+  and the game marks (`Wordmark`, `Amount`, `BadgeMark`, `RankStar`, `RankProgress`, icons).
+- Shell: `src/layout/AppShell.tsx` – the one shell of every signed-in page: wordmark, the role's
+  links (admin Import kont, teacher and student Moje grupy), theme switch, account menu (students:
+  nickname with the nickname dialog), Wyloguj, skip link and `<main>`; pages render only their
+  content. `useShell()` shows a toast, `<ShellAside>` / `<ShellSubnav>` put page controls in the
+  header. `src/layout/RootLayout.tsx` mounts smooth scrolling (Lenis + GSAP, `src/lib/`, a lazy
+  chunk) per page.
+- Landing: `src/pages/LoginPage.tsx` (`/login`, a lazy route) – the night-sky landing with the
+  login card in its hero and the closing; its sections, WebGL skies (`src/lib/ShaderCanvas.tsx`)
+  and copy live in `src/pages/landing/`.
 - `src/pages/teacher/gameConfigValidation.ts` – currency/rank rules mirrored from the game
   service (unique, non-negative integer thresholds), covered by tests.
-- Blask, the design of the new screens (teacher "Nagrody" tab, the student area), is an
-  opt-in layer: put the `blask` class on a page's root and the older pages keep their look.
-  Palette and fonts are the `--color-blask-*` / `--font-blask-*` tokens in `global.css`
-  (`text-blask-graphite`, `bg-blask-paper`, …); `src/styles/blask.css` holds the scope (Figtree,
-  ink, cobalt focus ring, reduced motion) and the kit classes (`blask-panel`, `blask-btn`,
-  `blask-input`, `blask-chip`, `blask-display`, …); `src/components/blask/` the shared parts
-  (currency mark and amount, badge marks, rank star and progress line, notice, confirm dialog).
 - `src/pages/teacher/awards/` – the "Nagrody" tab: awards to many students at once (one request
   per student, four at a time), inline badge creation, each student's history and badge revoke.
   Its rules (form validation, history order, result texts) are plain modules with tests.
-- `src/layout/StudentLayout.tsx` + `src/pages/student/` – the student area, all in Blask: its own
-  header (Moje grupy, account menu with the nickname dialog, Wyloguj), `/student` (one card per
+- `src/pages/student/` – the student area: `/student` (one card per
   group, states fetched three at a time) and `/student/groups/:groupId` with the tabs Mój stan and
   Ranking (`?by=points|badges`). Nickname rules, ranking texts and progress wording are plain
   modules with tests. In the mocks `student` starts without a nickname; `pzielinski` is

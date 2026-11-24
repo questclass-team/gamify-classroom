@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      // Only for the on-demand three.js chunk of the landing's coin arch (~560 kB, loaded when the
+      // chapter nears). The main chunk stays ~431 kB; do not raise this for anything else.
+      chunkSizeWarningLimit: 600,
+    },
     server: {
       proxy: {
         // Real backend goes through nginx (/api/core, /api/game). Ignored while mocks are on.

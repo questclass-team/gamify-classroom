@@ -1,0 +1,258 @@
+/*
+ * Blask game parts shared by the student and teacher screens: the rank stars
+ * (components/blask/RankStar), the rank progress line (components/blask/RankProgress), the line
+ * of light a history hangs on (the Kronika, a student's award history) and the balance chip.
+ * On paper a cobalt → iris light with a pearl core; on the evening a pearl light in a lavender
+ * halo.
+ */
+@layer components {
+  /* ---- Rank stars --------------------------------------------------------------------------- */
+
+  .blask-star {
+    --blask-star-a: #2b3bff;
+    --blask-star-b: #6c3bf4;
+    --blask-star-core: #fbfaff;
+    --blask-star-halo: #8e9bff;
+    --blask-star-glow: 1.15;
+    --blask-star-glint: #8e9bff;
+    --blask-star-ring: #6c7bff;
+    --blask-star-trail: #2b3bff;
+    --blask-star-dim-fill: #eef0fe;
+    --blask-star-dim-line: #a3b1f5;
+  }
+
+  [data-theme='dark'] .blask-star {
+    --blask-star-a: #ffffff;
+    --blask-star-b: #c9d0ff;
+    --blask-star-core: #ffffff;
+    --blask-star-halo: #a5b0ff;
+    --blask-star-glow: 1.45;
+    --blask-star-glint: #e6e9ff;
+    --blask-star-ring: #afc0ff;
+    --blask-star-trail: #c3c9f5;
+    --blask-star-dim-fill: #111a52;
+    --blask-star-dim-line: #4654b8;
+  }
+
+  .blask-star-halo,
+  .blask-star-core,
+  .blask-star-glint,
+  .blask-star-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  /* The current rank breathes: the halo swells, the core brightens. */
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-star--twinkle .blask-star-halo {
+      animation: blask-star-breathe 3.6s ease-in-out infinite;
+    }
+
+    .blask-star--twinkle .blask-star-core {
+      animation: blask-star-core 3.6s ease-in-out infinite;
+    }
+
+    .blask-star--twinkle .blask-star-glint {
+      animation: blask-star-turn 7.2s ease-in-out infinite;
+    }
+
+    .blask-star--twinkle .blask-star-ring {
+      animation: blask-star-breathe 3.6s ease-in-out infinite reverse;
+    }
+  }
+
+  @keyframes blask-star-breathe {
+    0%,
+    100% {
+      opacity: 0.78;
+      scale: 0.92;
+    }
+    50% {
+      opacity: 1;
+      scale: 1.08;
+    }
+  }
+
+  @keyframes blask-star-core {
+    0%,
+    100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes blask-star-turn {
+    0%,
+    100% {
+      rotate: -6deg;
+    }
+    50% {
+      rotate: 6deg;
+    }
+  }
+
+  /* ---- Rank progress: a line of light to the next rank ------------------------------------- */
+
+  .blask-rank-track {
+    background: repeating-linear-gradient(90deg, #8e9bff 0 3px, transparent 3px 7px);
+    opacity: 0.7;
+  }
+
+  .blask-rank-fill {
+    background: linear-gradient(90deg, #afc0ff, #8e9bff 30%, #2b3bff);
+    box-shadow:
+      0 0 8px rgb(43 59 255 / 0.35),
+      0 0 20px rgb(108 59 244 / 0.16);
+    transition: width 700ms var(--blask-ease);
+  }
+
+  .blask-rank-head {
+    background: radial-gradient(circle, #ffffff 0 36%, #fbfaff 52%, #afc0ff);
+    box-shadow:
+      0 0 0 2px var(--blask-panel),
+      0 0 10px 3px rgb(43 59 255 / 0.42),
+      0 0 26px 7px rgb(108 59 244 / 0.15);
+    transition: left 700ms var(--blask-ease);
+  }
+
+  [data-theme='dark'] .blask-rank-track {
+    opacity: 0.55;
+  }
+
+  [data-theme='dark'] .blask-rank-fill {
+    background: linear-gradient(90deg, #3d4aa8, #8e9bff 45%, #fbfaff);
+    box-shadow:
+      0 0 8px rgb(142 155 255 / 0.7),
+      0 0 22px rgb(108 59 244 / 0.4);
+  }
+
+  [data-theme='dark'] .blask-rank-head {
+    box-shadow:
+      0 0 0 2px var(--blask-panel),
+      0 0 12px 4px rgb(142 155 255 / 0.65),
+      0 0 30px 9px rgb(108 59 244 / 0.35);
+  }
+
+  /* ---- The line of light: a history hangs on it, newest at the top ------------------------- */
+
+  .blask-ray {
+    --blask-gutter: 1.75rem;
+    --blask-axis: 0.5625rem;
+    /* The ring round each node: the surface the line sits on. */
+    --blask-ray-ring: var(--blask-panel);
+    position: relative;
+    padding-left: var(--blask-gutter);
+  }
+
+  .blask-ray::before {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0;
+    left: var(--blask-axis);
+    width: 2px;
+    margin-left: -1px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #2b3bff 0%, #8e9bff 30%, #afc0ff 72%, rgb(175 192 255 / 0));
+    box-shadow:
+      0 0 8px rgb(43 59 255 / 0.2),
+      0 0 22px rgb(108 59 244 / 0.1);
+  }
+
+  [data-theme='dark'] .blask-ray::before {
+    background: linear-gradient(180deg, #fbfaff 0%, #c9d0ff 25%, #8e9bff 65%, rgb(142 155 255 / 0));
+    box-shadow:
+      0 0 10px rgb(142 155 255 / 0.6),
+      0 0 26px rgb(108 59 244 / 0.4);
+  }
+
+  .blask-ray__node {
+    position: absolute;
+    left: calc(var(--blask-axis) - var(--blask-gutter));
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    border-radius: 999px;
+    background: radial-gradient(circle, #fbfaff 0 30%, #8e9bff 62%, #2b3bff 100%);
+    box-shadow:
+      0 0 0 3px var(--blask-ray-ring),
+      0 0 10px 2px rgb(43 59 255 / 0.3);
+  }
+
+  [data-theme='dark'] .blask-ray__node {
+    background: radial-gradient(circle, #fbfaff 0 38%, #c9d0ff 62%, #8e9bff 100%);
+    box-shadow:
+      0 0 0 3px var(--blask-ray-ring),
+      0 0 12px 3px rgb(142 155 255 / 0.6);
+  }
+
+  /* A badge on the line: an outlined node in iris. */
+  .blask-ray__node[data-kind='badge'] {
+    background: var(--blask-ray-ring);
+    box-shadow:
+      0 0 0 3px var(--blask-ray-ring),
+      inset 0 0 0 2px var(--color-blask-iris),
+      0 0 8px rgb(108 59 244 / 0.3);
+  }
+
+  /* A freshly added entry: a soft halo that grows and settles, never a hard flash. */
+  .blask-ray__node::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgb(43 59 255 / 0.32), rgb(108 59 244 / 0) 70%);
+    opacity: 0;
+  }
+
+  [data-theme='dark'] .blask-ray__node::after {
+    background: radial-gradient(circle, rgb(142 155 255 / 0.45), rgb(108 59 244 / 0) 70%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-ray__node[data-fresh='true']::after {
+      animation: blask-ray-glow 1100ms var(--blask-ease) both;
+    }
+  }
+
+  @keyframes blask-ray-glow {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    35% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2.6);
+    }
+  }
+
+  /* ---- The balance chip (a page may put it in the header through <ShellAside>) ------------ */
+
+  .blask-balance-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.125rem;
+    padding: 0 0.8rem 0 0.4rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #ffffff, #f3f5ff);
+    color: var(--color-blask-ink);
+    font-size: 0.9375rem;
+    font-weight: 650;
+    box-shadow:
+      inset 0 0 0 1px #dde3ff,
+      0 6px 16px -10px rgb(43 59 255 / 0.45);
+  }
+
+  [data-theme='dark'] .blask-balance-chip {
+    background: linear-gradient(180deg, #151e5c, #0c1240);
+    box-shadow:
+      inset 0 0 0 1px #2c3687,
+      0 6px 18px -10px rgb(108 59 244 / 0.7);
+  }
+}

@@ -68,7 +68,7 @@ export function AwardPanel(props: AwardPanelProps) {
     <section
       id="award-panel"
       aria-labelledby="award-panel-title"
-      className="blask-panel scroll-mt-6 lg:sticky lg:top-6"
+      className="blask-panel scroll-mt-[calc(var(--blask-head-h)+1rem)] lg:sticky lg:top-[calc(var(--blask-head-h)+1.5rem)]"
     >
       <div className="blask-panel-head">
         <h2 id="award-panel-title" className="blask-panel-title">
@@ -385,7 +385,10 @@ function BadgeForm({ recipients, busy, badges, onReloadBadges, onAwardBadge }: A
           </p>
         )}
         {badges.status === 'ready' && (
-          <div className="-m-1 grid max-h-[19rem] content-start gap-2 overflow-y-auto p-1">
+          <div
+            data-lenis-prevent
+            className="-m-1 grid max-h-[19rem] content-start gap-2 overflow-y-auto overscroll-contain p-1"
+          >
             {catalog.map((badge) => (
               <label key={badge.id} className="blask-pick">
                 <input

@@ -1,9 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { RequireRole, RootRedirect } from './auth/guards'
-import { AppLayout } from './layout/AppLayout'
-import { StudentLayout } from './layout/StudentLayout'
+import { AppShell } from './layout/AppShell'
+import { RootLayout } from './layout/RootLayout'
 import { ImportAccountsPage } from './pages/admin/ImportAccountsPage'
-import { LoginPage } from './pages/LoginPage'
 import { MyGroupsPage } from './pages/student/MyGroupsPage'
 import { MyStatePage } from './pages/student/MyStatePage'
 import { RankingPage } from './pages/student/RankingPage'
@@ -15,52 +14,64 @@ import { GroupsPage } from './pages/teacher/GroupsPage'
 import { GroupStudentsPage } from './pages/teacher/GroupStudentsPage'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <RootRedirect /> },
-  { path: '/login', element: <LoginPage /> },
   {
-    element: <RequireRole role="admin" />,
+    element: <RootLayout />,
     children: [
-      { element: <AppLayout />, children: [{ path: '/admin', element: <ImportAccountsPage /> }] },
-    ],
-  },
-  {
-    element: <RequireRole role="teacher" />,
-    children: [
+      { path: '/', element: <RootRedirect /> },
       {
-        element: <AppLayout />,
+        // The landing (three.js, shaders, GSAP) stays out of the main chunk.
+        path: '/login',
+        lazy: async () => ({ Component: (await import('./pages/LoginPage')).LoginPage }),
+      },
+      {
+        element: <RequireRole role="admin" />,
         children: [
-          { path: '/teacher', element: <GroupsPage /> },
           {
-            path: '/teacher/groups/:groupId',
-            element: <GroupLayoutRoute />,
+            element: <AppShell />,
+            children: [{ path: '/admin', element: <ImportAccountsPage /> }],
+          },
+        ],
+      },
+      {
+        element: <RequireRole role="teacher" />,
+        children: [
+          {
+            element: <AppShell />,
             children: [
-              { index: true, element: <GroupStudentsPage /> },
-              { path: 'config', element: <GroupConfigPage /> },
-              { path: 'awards', element: <GroupAwardsPage /> },
+              { path: '/teacher', element: <GroupsPage /> },
+              {
+                path: '/teacher/groups/:groupId',
+                element: <GroupLayoutRoute />,
+                children: [
+                  { index: true, element: <GroupStudentsPage /> },
+                  { path: 'config', element: <GroupConfigPage /> },
+                  { path: 'awards', element: <GroupAwardsPage /> },
+                ],
+              },
             ],
           },
         ],
       },
-    ],
-  },
-  {
-    element: <RequireRole role="student" />,
-    children: [
       {
-        element: <StudentLayout />,
+        element: <RequireRole role="student" />,
         children: [
-          { path: '/student', element: <MyGroupsPage /> },
           {
-            path: '/student/groups/:groupId',
-            element: <StudentGroupRoute />,
+            element: <AppShell />,
             children: [
-              { index: true, element: <MyStatePage /> },
-              { path: 'ranking', element: <RankingPage /> },
+              { path: '/student', element: <MyGroupsPage /> },
+              {
+                path: '/student/groups/:groupId',
+                element: <StudentGroupRoute />,
+                children: [
+                  { index: true, element: <MyStatePage /> },
+                  { path: 'ranking', element: <RankingPage /> },
+                ],
+              },
             ],
           },
         ],
       },
+      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
 ])

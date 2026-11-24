@@ -83,7 +83,7 @@ export function StudentList({
           />
         </div>
         <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <label className="-ml-1 flex cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-[0.9375rem] font-medium">
+          <label className="-ml-1 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 py-2 text-[0.9375rem] font-medium">
             <input
               type="checkbox"
               className="blask-check"
@@ -135,7 +135,7 @@ export function StudentList({
             return (
               <li
                 key={student.id}
-                className={`blask-row ${isSelected ? 'bg-[#f6f7ff] hover:bg-[#f1f3ff]' : ''}`}
+                className={`blask-row ${isSelected ? 'bg-blask-peri-soft/60 hover:bg-blask-peri-soft' : ''}`}
               >
                 <div className="flex items-center gap-1 pr-2 pl-2 sm:pr-3 sm:pl-3">
                   <label className="grid size-11 flex-none cursor-pointer place-items-center rounded-lg">

@@ -4,127 +4,227 @@ import { apiErrorMessage } from '../../api/errorMessage'
 import { createGroup, fetchGroups } from '../../api/groups'
 import { GROUP_NAME_MAX_LENGTH, type GroupSummary } from '../../api/types'
 import { useApiData, type LoadState } from '../../api/useApiData'
-import {
-  Alert,
-  Button,
-  ErrorWithRetry,
-  PageHeader,
-  Panel,
-  SectionTitle,
-  Table,
-  TextField,
-} from '../../components/ui'
-import { dateFormat } from '../../format'
+import { BlaskNotice } from '../../components/blask/BlaskNotice'
+import { Button } from '../../components/blask/Button'
+import { Dialog } from '../../components/blask/Dialog'
+import { TextField } from '../../components/blask/Field'
+import { GroupCover } from '../../components/blask/GroupCover'
+import { PlusIcon } from '../../components/blask/icons'
+import { PageHeader } from '../../components/blask/PageHeader'
+import { EmptyState, LoadingState, Skeleton } from '../../components/blask/States'
+import { dateFormat, plural } from '../../format'
+import { useShell } from '../../layout/shellContext'
 
 const CREATE_ERRORS = {
   400: `Nazwa grupy jest wymagana i może mieć najwyżej ${GROUP_NAME_MAX_LENGTH} znaków.`,
 }
 
+const CARD_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,18.75rem),1fr))] gap-5'
+
 export function GroupsPage() {
   const { state, reload, update } = useApiData(fetchGroups)
-
-  const [name, setName] = useState('')
   const [creating, setCreating] = useState(false)
-  const [createError, setCreateError] = useState<string | null>(null)
-  const [createdName, setCreatedName] = useState<string | null>(null)
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const trimmed = name.trim()
-    if (trimmed === '') {
-      setCreateError('Podaj nazwę grupy.')
-      return
-    }
-    setCreateError(null)
-    setCreatedName(null)
-    setCreating(true)
-    try {
-      const group = await createGroup({ name: trimmed })
-      update((groups) => [...groups, group].sort((a, b) => a.name.localeCompare(b.name, 'pl')))
-      setName('')
-      setCreatedName(group.name)
-    } catch (error) {
-      setCreateError(apiErrorMessage(error, CREATE_ERRORS))
-    } finally {
-      setCreating(false)
-    }
-  }
+  const groups = state.status === 'ready' ? state.data : null
+  const description =
+    groups === null
+      ? 'Grupy, które prowadzisz. Każda ma własną listę studentów, punkty i rangi.'
+      : groups.length === 0
+        ? 'Nie prowadzisz jeszcze żadnej grupy. Każda ma własną listę studentów, punkty i rangi.'
+        : `Prowadzisz ${groups.length} ${plural(groups.length, 'grupę', 'grupy', 'grup')}. Każda ma własną listę studentów, punkty i rangi.`
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Moje grupy"
-        description="Grupy, które prowadzisz. Każda ma osobną listę studentów, punkty i rangi."
+        description={description}
+        actions={
+          <Button variant="primary" aria-haspopup="dialog" onClick={() => setCreating(true)}>
+            <PlusIcon className="size-4" />
+            Nowa grupa
+          </Button>
+        }
       />
 
-      <Panel>
-        <SectionTitle>Nowa grupa</SectionTitle>
-        <form className="flex flex-wrap items-end gap-4" onSubmit={handleCreate} noValidate>
-          <div className="min-w-0 flex-[1_1_16rem]">
-            <TextField
-              id="group-name"
-              label="Nazwa grupy"
-              placeholder="np. Inżynieria oprogramowania – grupa 1"
-              value={name}
-              maxLength={GROUP_NAME_MAX_LENGTH}
-              onChange={(event) => setName(event.target.value)}
-              disabled={creating}
-            />
-          </div>
-          <Button type="submit" disabled={creating}>
-            {creating ? 'Tworzenie…' : 'Utwórz grupę'}
-          </Button>
-        </form>
-        {createError !== null && <Alert tone="error">{createError}</Alert>}
-        {createdName !== null && <Alert tone="success">Utworzono grupę „{createdName}”.</Alert>}
-      </Panel>
+      <GroupsList state={state} onRetry={reload} onCreate={() => setCreating(true)} />
 
-      <GroupsList state={state} onRetry={reload} />
+      <NewGroupDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(group) =>
+          update((current) =>
+            [...current, group].sort((a, b) => a.name.localeCompare(b.name, 'pl')),
+          )
+        }
+      />
     </div>
   )
 }
 
-function GroupsList({ state, onRetry }: { state: LoadState<GroupSummary[]>; onRetry: () => void }) {
+function GroupsList({
+  state,
+  onRetry,
+  onCreate,
+}: {
+  state: LoadState<GroupSummary[]>
+  onRetry: () => void
+  onCreate: () => void
+}) {
   if (state.status === 'loading') {
-    return <p className="text-muted">Ładowanie grup…</p>
+    return (
+      <LoadingState label="Ładowanie grup…" className={CARD_GRID}>
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="blask-panel flex flex-col">
+            <Skeleton className="aspect-[5/2] w-full rounded-t-[15px] rounded-b-none" />
+            <div className="flex flex-col gap-3 p-5">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+        ))}
+      </LoadingState>
+    )
   }
   if (state.status === 'error') {
-    return <ErrorWithRetry message={apiErrorMessage(state.error)} onRetry={onRetry} />
+    return (
+      <BlaskNotice tone="error" title="Nie udało się wczytać grup.">
+        <p className="text-sm">{apiErrorMessage(state.error)}</p>
+        <Button variant="quiet" size="sm" className="self-start" onClick={onRetry}>
+          Spróbuj ponownie
+        </Button>
+      </BlaskNotice>
+    )
   }
   if (state.data.length === 0) {
-    return <Alert tone="info">Nie masz jeszcze żadnych grup. Utwórz pierwszą powyżej.</Alert>
+    return (
+      <EmptyState
+        title="Nie masz jeszcze grup"
+        icon={<PlusIcon className="size-5" />}
+        action={
+          <Button variant="primary" aria-haspopup="dialog" onClick={onCreate}>
+            Utwórz pierwszą grupę
+          </Button>
+        }
+      >
+        <p>
+          Utwórz grupę dla swoich zajęć, potem dodaj do niej studentów i ustaw punkty oraz rangi.
+        </p>
+      </EmptyState>
+    )
   }
   return (
-    <Table caption={`Grupy (${state.data.length})`}>
-      <thead>
-        <tr>
-          <th scope="col">Nazwa</th>
-          <th scope="col" data-numeric>
-            Studenci
-          </th>
-          <th scope="col">Utworzono</th>
-        </tr>
-      </thead>
-      <tbody>
-        {state.data.map((group) => (
-          <tr key={group.id}>
-            <td>
-              <Link
-                to={`/teacher/groups/${group.id}`}
-                className="font-medium text-primary underline-offset-2 hover:underline focus-visible:underline"
-              >
-                {group.name}
-              </Link>
-            </td>
-            <td data-label="Studenci" data-numeric>
-              {group.studentCount}
-            </td>
-            <td data-label="Utworzono" className="whitespace-nowrap text-muted">
-              {dateFormat.format(new Date(group.createdAt))}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <ul className={CARD_GRID} aria-label="Grupy">
+      {state.data.map((group) => (
+        <li key={group.id} className="flex">
+          <GroupCard group={group} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** A group as a card: its cover, its name (the link to the group) and plain facts under it. */
+function GroupCard({ group }: { group: GroupSummary }) {
+  return (
+    <article className="blask-panel blask-group-card relative flex w-full flex-col">
+      <GroupCover
+        seed={group.id}
+        className="aspect-[5/2] w-full [clip-path:inset(0_round_15px_15px_0_0)]"
+      />
+      <div className="flex flex-1 flex-col gap-2 p-5">
+        <h2 className="text-[1.0625rem] leading-snug font-semibold text-blask-ink">
+          <Link to={`/teacher/groups/${group.id}`} className="blask-group-open">
+            {group.name}
+          </Link>
+        </h2>
+        <p className="text-sm text-blask-graphite">
+          <span className="blask-num font-semibold text-blask-ink">{group.studentCount}</span>{' '}
+          {plural(group.studentCount, 'student', 'studentów', 'studentów')} w grupie
+        </p>
+        <p className="mt-auto pt-2 text-sm text-blask-graphite">
+          Utworzona {dateFormat.format(new Date(group.createdAt))}
+        </p>
+      </div>
+    </article>
+  )
+}
+
+function NewGroupDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean
+  onClose: () => void
+  onCreated: (group: GroupSummary) => void
+}) {
+  const { notify } = useShell()
+  const [name, setName] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  function close() {
+    setName('')
+    setError(null)
+    onClose()
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (saving) return
+    const trimmed = name.trim()
+    if (trimmed === '') {
+      setError('Podaj nazwę grupy.')
+      event.currentTarget.querySelector<HTMLInputElement>('input')?.focus()
+      return
+    }
+    setError(null)
+    setSaving(true)
+    try {
+      const group = await createGroup({ name: trimmed })
+      onCreated(group)
+      notify(`Utworzono grupę „${group.name}”.`)
+      close()
+    } catch (caught) {
+      setError(apiErrorMessage(caught, CREATE_ERRORS))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={close}
+      title="Nowa grupa"
+      description="Wystarczy nazwa. Studentów, punkty i rangi ustawisz w grupie."
+      busy={saving}
+      onSubmit={handleSubmit}
+      footer={
+        <>
+          <Button variant="quiet" disabled={saving} onClick={close}>
+            Anuluj
+          </Button>
+          <Button variant="primary" type="submit" busy={saving} busyLabel="Tworzenie…">
+            Utwórz grupę
+          </Button>
+        </>
+      }
+    >
+      <TextField
+        label="Nazwa grupy"
+        placeholder="np. Inżynieria oprogramowania, grupa 1"
+        value={name}
+        maxLength={GROUP_NAME_MAX_LENGTH}
+        counter={{ length: name.length, max: GROUP_NAME_MAX_LENGTH }}
+        error={error}
+        autoComplete="off"
+        data-autofocus
+        onChange={(event) => {
+          setName(event.target.value)
+          if (error !== null && event.target.value.trim() !== '') setError(null)
+        }}
+      />
+    </Dialog>
   )
 }

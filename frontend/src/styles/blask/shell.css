@@ -1,0 +1,413 @@
+/*
+ * Blask app shell (src/layout/AppShell.tsx): the sticky header (wordmark, the role's links with
+ * the glint under the current one, the theme switch, the account and Wyloguj) over the page's
+ * full-width content frame. Prefix blask-.
+ */
+
+/* The angle of the switch's glow edge; registered so it can be transitioned (it sweeps). */
+@property --blask-switch-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: -70deg;
+}
+
+@layer components {
+  /* The content frame: uses the screen, with a comfortable cap on very wide displays. */
+  .blask-content {
+    width: 100%;
+    max-width: 1760px;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 2.4vw, 3rem);
+  }
+
+  /* The header: sticky, the page tone behind glass. */
+  .blask-topbar {
+    /* oklab, not oklch: the near-grey page tone has no stable hue, and an oklch mix with
+       transparent lands on hue 0 (a pink cast). */
+    background: color-mix(in oklab, var(--blask-page) 86%, transparent);
+    border-bottom: 1px solid var(--blask-panel-border);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+
+  /* ---- Header links: the current one is marked by a glint that drops through the edge ----- */
+
+  .blask-navlink {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0 0.875rem;
+    border-radius: 999px;
+    color: var(--color-blask-graphite);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color 320ms var(--blask-ease),
+      background-color 320ms var(--blask-ease);
+  }
+
+  .blask-navlink:hover {
+    background: var(--color-blask-mist);
+    color: var(--color-blask-ink);
+  }
+
+  .blask-navlink:active {
+    background: var(--color-blask-haze);
+  }
+
+  .blask-navlink[aria-current='page'] {
+    color: var(--color-blask-ink);
+    font-weight: 650;
+  }
+
+  .blask-navlink[aria-current='page']:hover {
+    background: transparent;
+  }
+
+  /* The glint: a hairline of light from under the label through the header's lower edge.
+     --blask-glint-drop is the gap from the link to that edge (14px in the 4rem header row). */
+  .blask-navlink[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% - 2px);
+    width: 2px;
+    height: calc(var(--blask-glint-drop, 14px) + 12px);
+    margin-left: -1px;
+    border-radius: 2px;
+    background: linear-gradient(
+      180deg,
+      rgb(175 192 255 / 0) 0%,
+      #8e9bff 40%,
+      #2b3bff 62%,
+      rgb(108 59 244 / 0) 100%
+    );
+    box-shadow:
+      0 0 6px rgb(43 59 255 / 0.3),
+      0 0 14px rgb(108 59 244 / 0.16);
+    transform-origin: 50% 0;
+  }
+
+  /* Where the glint crosses the edge: a small pearl point. */
+  .blask-navlink[aria-current='page']::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% + var(--blask-glint-drop, 14px) - 3px);
+    z-index: 1;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 999px;
+    background: #fbfaff;
+    box-shadow:
+      0 0 0 1.5px #2b3bff,
+      0 0 10px 2px rgb(43 59 255 / 0.35);
+  }
+
+  [data-theme='dark'] .blask-navlink[aria-current='page']::after {
+    background: linear-gradient(
+      180deg,
+      rgb(142 155 255 / 0) 0%,
+      #c9d0ff 40%,
+      #8e9bff 62%,
+      rgb(108 59 244 / 0) 100%
+    );
+    box-shadow:
+      0 0 8px rgb(142 155 255 / 0.55),
+      0 0 18px rgb(108 59 244 / 0.35);
+  }
+
+  [data-theme='dark'] .blask-navlink[aria-current='page']::before {
+    box-shadow:
+      0 0 0 1.5px #8e9bff,
+      0 0 12px 3px rgb(142 155 255 / 0.6);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-navlink[aria-current='page']::after {
+      animation: blask-glint-drop 1100ms var(--blask-ease) 200ms both;
+    }
+
+    .blask-navlink[aria-current='page']::before {
+      animation: blask-glow-in 800ms var(--blask-ease) 700ms both;
+    }
+  }
+
+  /* ---- The account ------------------------------------------------------------------------- */
+
+  .blask-account {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.625rem 0.25rem 0.25rem;
+    border-radius: 999px;
+    color: var(--color-blask-ink);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 160ms ease-out;
+  }
+
+  .blask-account:hover,
+  .blask-account[aria-expanded='true'] {
+    background: var(--color-blask-mist);
+  }
+
+  /* Initials in a disc of light. */
+  .blask-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: var(--color-blask-mist);
+    color: var(--color-blask-cobalt-deep);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: inset 0 0 0 1.5px #8e9bff;
+  }
+
+  /* ---- The theme switch: recessed track, glossy squircle knob, glow edge, a pool of light -- */
+
+  .blask-switch {
+    position: relative;
+    isolation: isolate;
+    display: inline-block;
+    flex: none;
+    width: 64px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The light the knob throws on the page around it. */
+  .blask-switch__pool {
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    left: 46px;
+    width: 76px;
+    height: 76px;
+    margin: -38px 0 0 -38px;
+    border-radius: 999px;
+    background: radial-gradient(
+      circle,
+      rgb(43 59 255 / 0.16),
+      rgb(142 155 255 / 0.08) 45%,
+      transparent 70%
+    );
+    pointer-events: none;
+    transition:
+      transform 700ms cubic-bezier(0.34, 1.32, 0.64, 1),
+      background 700ms var(--blask-ease);
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__pool {
+    transform: translateX(-28px);
+    background: radial-gradient(
+      circle,
+      rgb(108 59 244 / 0.42),
+      rgb(142 155 255 / 0.14) 45%,
+      transparent 70%
+    );
+  }
+
+  .blask-switch__track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #e6e9f6;
+    box-shadow:
+      inset 0 2px 5px rgb(14 16 32 / 0.14),
+      inset 0 -1px 1px rgb(255 255 255 / 0.9),
+      0 0 0 1px rgb(14 16 32 / 0.04);
+    transition:
+      background-color 700ms var(--blask-ease),
+      box-shadow 700ms var(--blask-ease);
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__track {
+    background: #040824;
+    box-shadow:
+      inset 0 2px 6px rgb(1 3 18 / 0.85),
+      inset 0 -1px 1px rgb(142 155 255 / 0.12),
+      0 0 0 1px rgb(142 155 255 / 0.14);
+  }
+
+  /* The knob's position: light on the right, dark on the left, with a soft overshoot. */
+  .blask-switch__slot {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 28px;
+    height: 28px;
+    transform: translateX(28px);
+    transition: transform 700ms cubic-bezier(0.34, 1.32, 0.64, 1);
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__slot {
+    transform: translateX(0);
+  }
+
+  .blask-switch__knob {
+    position: absolute;
+    inset: 0;
+    border-radius: 9px;
+    background:
+      radial-gradient(circle at 82% 8%, rgb(175 192 255 / 0.65), transparent 58%),
+      linear-gradient(160deg, #ffffff 0%, #f5f6ff 55%, #e7ebff 100%);
+    box-shadow:
+      0 3px 8px -2px rgb(14 16 32 / 0.28),
+      0 1px 2px rgb(14 16 32 / 0.12),
+      inset 0 1px 0 #ffffff,
+      inset 0 -1px 2px rgb(43 59 255 / 0.1);
+    transition:
+      transform 260ms var(--blask-ease),
+      box-shadow 260ms var(--blask-ease),
+      background 700ms var(--blask-ease);
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__knob {
+    background:
+      radial-gradient(circle at 18% 92%, rgb(142 155 255 / 0.5), transparent 60%),
+      linear-gradient(160deg, rgb(142 155 255 / 0.34) 0%, rgb(26 35 115 / 0.72) 100%);
+    box-shadow:
+      0 3px 10px -2px rgb(1 3 18 / 0.8),
+      inset 0 0 0 1px rgb(195 201 245 / 0.28),
+      inset 0 1px 0 rgb(251 250 255 / 0.3);
+  }
+
+  .blask-switch:hover .blask-switch__knob {
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 12px -3px rgb(14 16 32 / 0.3),
+      0 1px 2px rgb(14 16 32 / 0.12),
+      inset 0 1px 0 #ffffff,
+      inset 0 -1px 2px rgb(43 59 255 / 0.1);
+  }
+
+  .blask-switch[data-dark='true']:hover .blask-switch__knob {
+    box-shadow:
+      0 6px 14px -3px rgb(1 3 18 / 0.85),
+      inset 0 0 0 1px rgb(195 201 245 / 0.36),
+      inset 0 1px 0 rgb(251 250 255 / 0.35);
+  }
+
+  .blask-switch:active .blask-switch__knob {
+    transform: scale(0.92, 0.86);
+  }
+
+  .blask-switch__icon {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The glow edge: a ring of light hugging the knob, lit on the leading corner. It sweeps round
+     the knob as it slides (the angle is transitioned) and settles there. */
+  .blask-switch__edge {
+    --blask-edge: rgb(43 59 255 / 0.55);
+    --blask-edge-core: #8e9bff;
+    --blask-switch-angle: -70deg;
+    position: absolute;
+    inset: -2.5px;
+    padding: 1.5px;
+    border-radius: 11.5px;
+    background: conic-gradient(
+      from var(--blask-switch-angle),
+      transparent 0deg,
+      var(--blask-edge) 34deg,
+      var(--blask-edge-core) 80deg,
+      var(--blask-edge) 126deg,
+      transparent 160deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    transition: --blask-switch-angle 760ms var(--blask-ease);
+    pointer-events: none;
+  }
+
+  .blask-switch__edge--glow {
+    inset: -4px;
+    padding: 3px;
+    border-radius: 13px;
+    filter: blur(3px);
+    opacity: 0.8;
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__edge {
+    --blask-edge: rgb(108 59 244 / 0.7);
+    --blask-edge-core: #fbfaff;
+    --blask-switch-angle: 145deg;
+  }
+
+  .blask-switch[data-dark='true'] .blask-switch__edge--glow {
+    --blask-edge: rgb(142 155 255 / 0.75);
+    opacity: 1;
+  }
+
+  /*
+   * Where the shell's toasts land: the bottom edge (bottom-left from 640 px), never over the header,
+   * the page's title actions (top right) or row actions (right). Over a sticky save bar
+   * (.blask-save-bar) it covers only the bar's status line on the left, never its button on the
+   * right; on phones, where the bar wraps, it rises above the bar.
+   */
+  .blask-toast-dock {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    left: 1rem;
+    z-index: 40;
+    display: flex;
+    justify-content: flex-start;
+    pointer-events: none;
+  }
+
+  .blask-toast-dock > * {
+    pointer-events: auto;
+  }
+
+  @media (width < 40rem) {
+    body:has(.blask-save-bar) .blask-toast-dock {
+      bottom: calc(7.75rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (width >= 40rem) {
+    .blask-toast-dock {
+      right: auto;
+      left: 1.5rem;
+    }
+  }
+
+  /* Phones: 44 px under the finger. The switch keeps its drawn size and gets a taller hit area. */
+  @media (width < 40rem) {
+    .blask-navlink {
+      min-height: 2.75rem;
+    }
+
+    .blask-switch::after {
+      content: '';
+      position: absolute;
+      inset: -0.25rem 0;
+    }
+  }
+}
