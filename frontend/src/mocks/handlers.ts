@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw'
-import { rankForBalance } from '../components/blask/ranks'
+import { rankForBalance, rankProgress } from '../components/blask/ranks'
+import { nicknameError, normalizeNickname } from '../pages/student/nickname'
 import {
   BADGE_DESCRIPTION_MAX_LENGTH,
   BADGE_ICONS,
@@ -10,6 +11,7 @@ import {
   POINTS_MAX,
   RANK_THRESHOLD_MAX,
   REWARD_REASON_MAX_LENGTH,
+  RANKING_BY,
   STUDENT_SEARCH_MIN_LENGTH,
   USER_IMPORT_CSV_HEADER,
   type AddGroupStudentRequest,
@@ -21,18 +23,25 @@ import {
   type CurrentUser,
   type GameErrorBody,
   type GroupDetail,
+  type GroupRanking,
   type GroupGameConfig,
   type GroupStudent,
   type GroupSummary,
   type LoginRequest,
+  type MyGroup,
+  type RankingBy,
+  type RankingEntry,
   type LoginResponse,
   type RefreshResponse,
   type ProblemDetails,
   type RewardHistoryItem,
   type Role,
+  type StudentGroupState,
+  type StudentProfile,
   type StudentProgress,
   type StudentSummary,
   type UpdateGameConfigRequest,
+  type UpdateProfileRequest,
   type UserImportReport,
 } from '../api/types'
 import {
@@ -43,6 +52,7 @@ import {
   mockGameConfigs,
   mockGroups,
   mockLdapOnlyLogins,
+  mockNicknames,
   mockRewards,
   mockUsers,
   type MockBadgeAward,
@@ -185,6 +195,74 @@ export const handlers = [
       .slice(0, 10)
       .map(({ id, login, displayName }): StudentSummary => ({ id, login, displayName }))
     return HttpResponse.json(matches)
+  }),
+
+  // ---- core: the signed-in student's profile and groups ----
+
+  http.get('/api/core/me/profile', async ({ request }) => {
+    await delay(200)
+    const student = authorize(request, 'student')
+    if (student instanceof Response) return student
+    return HttpResponse.json({
+      nickname: mockNicknames.get(student.id) ?? null,
+    } satisfies StudentProfile)
+  }),
+
+  http.put('/api/core/me/profile', async ({ request }) => {
+    await delay(350)
+    const student = authorize(request, 'student')
+    if (student instanceof Response) return student
+    const { nickname: raw } = (await request.json()) as Partial<UpdateProfileRequest>
+    if (typeof raw !== 'string' || nicknameError(raw) !== null) {
+      return HttpResponse.json<ProblemDetails>(
+        {
+          title: 'Validation Failed',
+          status: 400,
+          errors: {
+            Nickname: [
+              "Nickname must have 3 to 24 characters: letters, digits, spaces, '_', '-' or '.', and must start and end with a letter or digit.",
+            ],
+          },
+        },
+        { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+      )
+    }
+    const nickname = normalizeNickname(raw)
+    const key = nickname.toLowerCase()
+    const taken = [...mockNicknames].some(
+      ([userId, other]) => userId !== student.id && other?.toLowerCase() === key,
+    )
+    if (taken) {
+      return problem(
+        409,
+        'Profile.NicknameTaken',
+        'This nickname is already taken. Choose another one.',
+      )
+    }
+    mockNicknames.set(student.id, nickname)
+    return HttpResponse.json({ nickname } satisfies StudentProfile)
+  }),
+
+  http.get('/api/core/me/groups', async ({ request }) => {
+    await delay(300)
+    const student = authorize(request, 'student')
+    if (student instanceof Response) return student
+    const groups = mockGroups
+      .flatMap((group) => {
+        const member = group.members.find((candidate) => candidate.studentId === student.id)
+        if (member === undefined) return []
+        const teacher = mockUsers.find((user) => user.id === group.teacherId)
+        return [
+          {
+            id: group.id,
+            name: group.name,
+            teacherName: teacher?.displayName ?? '',
+            joinedAt: member.addedAt,
+          } satisfies MyGroup,
+        ]
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'pl'))
+    return HttpResponse.json(groups)
   }),
 
   http.post('/api/core/groups/:groupId/students', async ({ request, params }) => {
@@ -439,7 +517,125 @@ export const handlers = [
       return new HttpResponse(null, { status: 204 })
     },
   ),
+
+  // ---- game service: the student's own state and the group ranking ----
+
+  http.get('/api/game/groups/:groupId/me', async ({ request, params }) => {
+    await delay(200 + Math.round(Math.random() * 400))
+    const caller = gameCaller(request)
+    if (caller instanceof Response) return caller
+    if (caller.role !== 'student') {
+      return gameError(403, { detail: 'You do not have permission to perform this action.' })
+    }
+    const group = mockGroups.find((candidate) => candidate.id === params.groupId)
+    if (group?.members.some((member) => member.studentId === caller.id) !== true) {
+      return gameError(404, { detail: 'Group not found.' })
+    }
+    const config = mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG
+    const balance = balanceOf(group.id, caller.id)
+    const { current, next } = rankProgress(balance, config.ranks)
+    const rewards = mockRewards
+      .filter((item) => item.groupId === group.id && item.studentId === caller.id)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
+    return HttpResponse.json({
+      groupId: group.id,
+      nickname: mockNicknames.get(caller.id) ?? null,
+      currencyName: config.currencyName,
+      currencyIconUrl: config.currencyIconUrl,
+      balance,
+      rank: current,
+      nextRank: next,
+      badges: activeAwards(group.id, caller.id).map(toBadgeAward),
+      rewards: rewards.map(toRewardItem),
+    } satisfies StudentGroupState)
+  }),
+
+  http.get('/api/game/groups/:groupId/ranking', async ({ request, params }) => {
+    await delay(300)
+    const caller = gameCaller(request)
+    if (caller instanceof Response) return caller
+    if (caller.role === 'admin') {
+      return gameError(403, { detail: 'You do not have permission to perform this action.' })
+    }
+    const by = new URL(request.url).searchParams.get('by') ?? 'points'
+    if (!RANKING_BY.includes(by as RankingBy)) {
+      return gameError(400, { by: [`"${by}" is not a valid choice.`] })
+    }
+    const group = mockGroups.find((candidate) => candidate.id === params.groupId)
+    const allowed =
+      group !== undefined &&
+      (caller.role === 'teacher'
+        ? group.teacherId === caller.id
+        : group.members.some((member) => member.studentId === caller.id))
+    if (!allowed) return gameError(404, { detail: 'Group not found.' })
+    const config = mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG
+    return HttpResponse.json({
+      groupId: group.id,
+      by: by as RankingBy,
+      currencyName: config.currencyName,
+      currencyIconUrl: config.currencyIconUrl,
+      entries: rankingEntries(group, by as RankingBy, caller),
+    } satisfies GroupRanking)
+  }),
 ]
+
+/** Token check of the game service for endpoints open to several roles (401 without a user). */
+function gameCaller(request: Request): CurrentUser | Response {
+  const userId = readMockBearer(request.headers.get('Authorization'))
+  const user = mockUsers.find((candidate) => candidate.id === userId)
+  return user ?? gameError(401, { detail: 'Authentication credentials were not provided.' })
+}
+
+function activeAwards(groupId: string, studentId: string): MockBadgeAward[] {
+  return mockBadgeAwards
+    .filter(
+      (award) =>
+        award.groupId === groupId && award.studentId === studentId && award.revokedAt === null,
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
+}
+
+/**
+ * The game service's ranking: every member, by the primary criterion, then the other one, then
+ * nickname (nulls last, ignoring case), then a hidden stable key; competition positions (1, 1, 3)
+ * on the primary criterion. Only nicknames leave the mock, never ids, names or logins.
+ */
+function rankingEntries(group: MockGroup, by: RankingBy, caller: CurrentUser): RankingEntry[] {
+  const ranks = (mockGameConfigs.get(group.id) ?? DEFAULT_GAME_CONFIG).ranks
+  const rows = group.members.map(({ studentId }) => {
+    const balance = balanceOf(group.id, studentId)
+    return {
+      key: studentId,
+      nickname: mockNicknames.get(studentId) ?? null,
+      balance,
+      rank: rankForBalance(balance, ranks),
+      badgeCount: activeAwards(group.id, studentId).length,
+      isMe: caller.role === 'student' && caller.id === studentId,
+    }
+  })
+  type Row = (typeof rows)[number]
+  const primary = (row: Row) => (by === 'points' ? row.balance : row.badgeCount)
+  const secondary = (row: Row) => (by === 'points' ? row.badgeCount : row.balance)
+  const byNickname = (a: Row, b: Row) => {
+    if (a.nickname === null || b.nickname === null) {
+      return Number(a.nickname === null) - Number(b.nickname === null)
+    }
+    const [left, right] = [a.nickname.toLowerCase(), b.nickname.toLowerCase()]
+    return left < right ? -1 : left > right ? 1 : 0
+  }
+  rows.sort(
+    (a, b) =>
+      primary(b) - primary(a) ||
+      secondary(b) - secondary(a) ||
+      byNickname(a, b) ||
+      a.key.localeCompare(b.key),
+  )
+  let position = 0
+  return rows.map(({ nickname, balance, rank, badgeCount, isMe }, index) => {
+    if (index === 0 || primary(rows[index - 1]) !== primary(rows[index])) position = index + 1
+    return { position, nickname, balance, rank, badgeCount, isMe }
+  })
+}
 
 function gameError(status: number, body: GameErrorBody) {
   return HttpResponse.json(body, { status })

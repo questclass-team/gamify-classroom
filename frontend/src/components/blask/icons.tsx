@@ -31,6 +31,14 @@ export function SearchIcon(props: IconProps) {
   )
 }
 
+export function CheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Icon>
+  )
+}
+
 export function CheckCircleIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -79,6 +87,32 @@ export function ChevronIcon(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="m6 9 6 6 6-6" />
+    </Icon>
+  )
+}
+
+export function PenIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16z" />
+      <path d="m13.5 6.5 4 4" />
+    </Icon>
+  )
+}
+
+export function LogOutIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M9 20H5.5A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4H9" />
+      <path d="m15 16 4-4-4-4M19 12H9" />
+    </Icon>
+  )
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 6l12 12M18 6 6 18" />
     </Icon>
   )
 }

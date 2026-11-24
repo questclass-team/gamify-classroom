@@ -55,7 +55,7 @@ Production builds never include the mocks.
   into labelled cards in narrow containers (`data-label` on cells).
 - `src/pages/teacher/gameConfigValidation.ts` – currency/rank rules mirrored from the game
   service (unique, non-negative integer thresholds), covered by tests.
-- Blask, the design of the new screens (teacher "Nagrody" tab, later the student views), is an
+- Blask, the design of the new screens (teacher "Nagrody" tab, the student area), is an
   opt-in layer: put the `blask` class on a page's root and the older pages keep their look.
   Palette and fonts are the `--color-blask-*` / `--font-blask-*` tokens in `global.css`
   (`text-blask-graphite`, `bg-blask-paper`, …); `src/styles/blask.css` holds the scope (Figtree,
@@ -65,3 +65,9 @@ Production builds never include the mocks.
 - `src/pages/teacher/awards/` – the "Nagrody" tab: awards to many students at once (one request
   per student, four at a time), inline badge creation, each student's history and badge revoke.
   Its rules (form validation, history order, result texts) are plain modules with tests.
+- `src/layout/StudentLayout.tsx` + `src/pages/student/` – the student area, all in Blask: its own
+  header (Moje grupy, account menu with the nickname dialog, Wyloguj), `/student` (one card per
+  group, states fetched three at a time) and `/student/groups/:groupId` with the tabs Mój stan and
+  Ranking (`?by=points|badges`). Nickname rules, ranking texts and progress wording are plain
+  modules with tests. In the mocks `student` starts without a nickname; `pzielinski` is
+  "Cichy Lis" (try it to see "Ten nick jest już zajęty").
