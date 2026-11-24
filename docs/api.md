@@ -364,7 +364,7 @@ if the same award was already revoked. It no longer appears in the active list; 
 
 ### Student state and group ranking
 
-Game reads group membership and nicknames from Core `GET /api/core/groups/{groupId}/roster`, called with the
+Game reads group membership, nicknames and avatars from Core `GET /api/core/groups/{groupId}/roster`, called with the
 caller's token. Core answers only the owning teacher and member students, so a foreign or missing group is `404`
 here as well. A student is always identified by the token `sub`, never by an ID in the URL.
 
@@ -376,6 +376,7 @@ Student only. Returns the calling student's state in a group they belong to:
 {
   "groupId": "11111111-1111-4111-8111-111111111111",
   "nickname": "Cichy Lis",
+  "avatar": "fox",
   "currencyName": "Złote monety",
   "currencyIconUrl": null,
   "balance": 120,
@@ -387,6 +388,8 @@ Student only. Returns the calling student's state in a group they belong to:
 ```
 
 - `nickname` comes from Core and is `null` until the student sets one.
+- `avatar` is the student's avatar key from Core (see "Avatars" above), or `null` until set. Game passes it
+  through without checking it against the key list.
 - `balance` is `0` if the student has never been awarded points in the group.
 - `rank` is the highest rank reached and `nextRank` the lowest rank not reached yet; either is `null` when there is
   none (no ranks configured, below the first threshold, or already at the top rank).
@@ -410,6 +413,7 @@ For a member student or the owning teacher. `by` defaults to `points`; any other
     {
       "position": 1,
       "nickname": "Cichy Lis",
+      "avatar": "fox",
       "balance": 320,
       "rank": { "name": "Rycerz", "threshold": 300 },
       "badgeCount": 2,
@@ -426,7 +430,8 @@ For a member student or the owning teacher. `by` defaults to `points`; any other
 - `position` uses competition ranking on the chosen criterion only: equal values share a position and the next
   position skips (1, 1, 3).
 - `isMe` is `true` only on the calling student's entry; it is always `false` for a teacher.
-- Entries contain only the nickname: no student ID, login or name, for any caller. A missing nickname stays `null`.
+- Entries contain only the nickname and avatar: no student ID, login or name, for any caller. A missing nickname or
+  avatar stays `null`.
 
 | Status | Meaning |
 |---|---|

@@ -31,9 +31,10 @@ class FakeCore:
 
     def __init__(self) -> None:
         self.roster = [
-            {"studentId": ME_ID, "nickname": "Cichy Lis"},
-            {"studentId": ANNA_ID, "nickname": "anna"},
-            {"studentId": BOB_ID, "nickname": "Bob"},
+            {"studentId": ME_ID, "nickname": "Cichy Lis", "avatar": "fox"},
+            {"studentId": ANNA_ID, "nickname": "anna", "avatar": "owl"},
+            {"studentId": BOB_ID, "nickname": "Bob", "avatar": None},
+            # An older Core without the avatar field: read as null.
             {"studentId": NO_NICK_ID, "nickname": None},
         ]
         self.response: httpx.Response | None = None
@@ -135,6 +136,7 @@ def test_state_shows_the_callers_balance_ranks_badges_and_rewards(
     assert {key: state[key] for key in state if key not in {"badges", "rewards"}} == {
         "groupId": str(GROUP_ID),
         "nickname": "Cichy Lis",
+        "avatar": "fox",
         "currencyName": "Złote monety",
         "currencyIconUrl": None,
         "balance": 120,
@@ -161,6 +163,7 @@ def test_state_defaults_without_configuration_progress_or_nickname(
     assert response.json() == {
         "groupId": str(GROUP_ID),
         "nickname": None,
+        "avatar": None,
         "currencyName": "Punkty",
         "currencyIconUrl": None,
         "balance": 0,
@@ -273,6 +276,7 @@ def test_ranking_by_points_uses_competition_positions(
             {
                 "position": 1,
                 "nickname": "Bob",
+                "avatar": None,
                 "balance": 320,
                 "rank": {"name": "Rycerz", "threshold": 300},
                 "badgeCount": 1,
@@ -281,6 +285,7 @@ def test_ranking_by_points_uses_competition_positions(
             {
                 "position": 2,
                 "nickname": "anna",
+                "avatar": "owl",
                 "balance": 120,
                 "rank": giermek,
                 "badgeCount": 2,
@@ -289,6 +294,7 @@ def test_ranking_by_points_uses_competition_positions(
             {
                 "position": 2,
                 "nickname": "Cichy Lis",
+                "avatar": "fox",
                 "balance": 120,
                 "rank": giermek,
                 "badgeCount": 1,
@@ -297,6 +303,7 @@ def test_ranking_by_points_uses_competition_positions(
             {
                 "position": 4,
                 "nickname": None,
+                "avatar": None,
                 "balance": 0,
                 "rank": {"name": "Nowicjusz", "threshold": 0},
                 "badgeCount": 0,
@@ -350,6 +357,24 @@ def test_ranking_ties_order_by_nickname_case_insensitively_with_nulls_last(
     assert [entry["isMe"] for entry in entries] == [False, False, True, False]
 
 
+def test_state_passes_an_explicit_null_avatar_through(api_client, as_user, core):
+    response = api_client.get(state_url(), **as_user("student", BOB_ID))
+
+    assert response.status_code == 200
+    assert response.json()["avatar"] is None
+
+
+def test_avatars_pass_through_unvalidated(api_client, as_user, core):
+    # Core owns the key list; Game does not second-guess it.
+    core.roster = [{"studentId": ME_ID, "nickname": "Cichy Lis", "avatar": "unicorn"}]
+
+    state = api_client.get(state_url(), **as_user("student", ME_ID)).json()
+    ranking = api_client.get(ranking_url(), **as_user("student", ME_ID)).json()
+
+    assert state["avatar"] == "unicorn"
+    assert [entry["avatar"] for entry in ranking["entries"]] == ["unicorn"]
+
+
 def test_ranking_rejects_an_unknown_criterion(api_client, as_user, core):
     for by in ("rank", "", "POINTS"):
         response = api_client.get(ranking_url(by=by), **as_user("student", ME_ID))
@@ -392,6 +417,7 @@ def test_ranking_never_exposes_student_ids(api_client, as_user, core, ranked_gro
                 assert set(entry) == {
                     "position",
                     "nickname",
+                    "avatar",
                     "balance",
                     "rank",
                     "badgeCount",
@@ -427,6 +453,10 @@ def test_ranking_query_count_does_not_grow_with_the_roster(
         httpx.Response(200, json={"students": []}),
         httpx.Response(200, json=[{"studentId": "not-a-uuid", "nickname": None}]),
         httpx.Response(200, json=[{"studentId": ME_ID, "nickname": 7}]),
+        httpx.Response(200, json=[{"studentId": ME_ID, "nickname": None, "avatar": 7}]),
+        httpx.Response(
+            200, json=[{"studentId": ME_ID, "nickname": None, "avatar": ["fox"]}]
+        ),
     ],
 )
 def test_core_failures_return_service_unavailable(

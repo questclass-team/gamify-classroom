@@ -434,6 +434,7 @@ class StudentGroupStateView(APIView):
             group_id=group_id,
             student_id=UUID(member.student_id),
             nickname=member.nickname,
+            avatar=member.avatar,
         )
         return Response(StudentGroupStateSerializer(state).data)
 
