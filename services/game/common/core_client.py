@@ -1,4 +1,5 @@
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 from django.conf import settings
@@ -15,12 +16,12 @@ class CoreUnavailable(Exception):
 class CoreClient:
     def _get_group(
         self,
-        group_id: str,
+        group_id: UUID,
         authorization: str,
     ) -> httpx.Response:
         url = (
             f"{settings.CORE_BASE_URL.rstrip('/')}"
-            f"/api/core/groups/{quote(group_id, safe='')}"
+            f"/api/core/groups/{quote(str(group_id), safe='')}"
         )
 
         try:
@@ -42,7 +43,7 @@ class CoreClient:
 
     def ensure_group_access(
         self,
-        group_id: str,
+        group_id: UUID,
         authorization: str,
     ) -> None:
         self._get_group(
@@ -52,8 +53,8 @@ class CoreClient:
 
     def ensure_student_in_group(
         self,
-        group_id: str,
-        student_id: str,
+        group_id: UUID,
+        student_id: UUID,
         authorization: str,
     ) -> None:
         response = self._get_group(
@@ -69,8 +70,9 @@ class CoreClient:
         if not isinstance(students, list):
             raise CoreUnavailable
 
+        student_id_text = str(student_id)
         if not any(
-            isinstance(student, dict) and student.get("id") == student_id
+            isinstance(student, dict) and student.get("id") == student_id_text
             for student in students
         ):
             raise CoreGroupNotFound

@@ -7,6 +7,8 @@ from .models import (
     RANK_NAME_MAX_LENGTH,
     RANK_THRESHOLD_MAX,
     REWARD_REASON_MAX_LENGTH,
+    Badge,
+    BadgeAward,
     PointReward,
     Rank,
 )
@@ -120,3 +122,74 @@ class RewardHistoryItemSerializer(serializers.ModelSerializer):
             "createdAt",
         )
         read_only_fields = ("points", "reason")
+
+
+class CreateBadgeSerializer(serializers.Serializer):
+    name = serializers.CharField(
+        max_length=40,
+    )
+    description = serializers.CharField(
+        max_length=200,
+        allow_blank=True,
+        default="",
+    )
+    icon = serializers.ChoiceField(choices=Badge.Icon.choices, default=Badge.Icon.MEDAL)
+
+
+class BadgeSerializer(serializers.ModelSerializer):
+    groupId = serializers.UUIDField(
+        source="group_id",
+        read_only=True,
+    )
+    createdAt = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Badge
+        fields = (
+            "id",
+            "groupId",
+            "name",
+            "description",
+            "icon",
+            "createdAt",
+        )
+        read_only_fields = fields
+
+
+class AwardBadgeSerializer(serializers.Serializer):
+    badgeId = StrictIntegerField(min_value=1, max_value=2**63 - 1)
+
+
+class BadgeAwardSerializer(serializers.ModelSerializer):
+    badge = BadgeSerializer(read_only=True)
+    badgeId = serializers.IntegerField(
+        source="badge_id",
+        read_only=True,
+    )
+    studentId = serializers.UUIDField(
+        source="student_id",
+        read_only=True,
+    )
+    awardedBy = serializers.CharField(
+        source="awarded_by",
+        read_only=True,
+    )
+    createdAt = serializers.DateTimeField(
+        source="created_at",
+        read_only=True,
+    )
+
+    class Meta:
+        model = BadgeAward
+        fields = (
+            "id",
+            "badgeId",
+            "badge",
+            "studentId",
+            "awardedBy",
+            "createdAt",
+        )
+        read_only_fields = fields

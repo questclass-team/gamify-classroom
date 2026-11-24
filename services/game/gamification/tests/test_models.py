@@ -1,13 +1,18 @@
+from uuid import UUID
+
 import pytest
 from django.db import IntegrityError, transaction
 
 from gamification.models import GroupGameConfiguration, Rank
 
+GROUP_ID = UUID("11111111-1111-4111-8111-111111111111")
+OTHER_GROUP_ID = UUID("22222222-2222-4222-8222-222222222222")
+
 
 @pytest.mark.django_db
 def test_configuration_has_default_currency_name():
     configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
 
     assert configuration.currency_name == "Punkty"
@@ -17,19 +22,19 @@ def test_configuration_has_default_currency_name():
 @pytest.mark.django_db
 def test_one_group_cannot_have_two_configurations():
     GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
 
     with pytest.raises(IntegrityError), transaction.atomic():
         GroupGameConfiguration.objects.create(
-            group_id="group-1",
+            group_id=GROUP_ID,
         )
 
 
 @pytest.mark.django_db
 def test_rank_threshold_cannot_repeat_in_same_configuration():
     configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
 
     Rank.objects.create(
@@ -49,7 +54,7 @@ def test_rank_threshold_cannot_repeat_in_same_configuration():
 @pytest.mark.django_db
 def test_rank_name_cannot_repeat_in_same_configuration():
     configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
 
     Rank.objects.create(
@@ -69,10 +74,10 @@ def test_rank_name_cannot_repeat_in_same_configuration():
 @pytest.mark.django_db
 def test_same_threshold_can_exist_in_different_groups():
     first_configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
     second_configuration = GroupGameConfiguration.objects.create(
-        group_id="group-2",
+        group_id=OTHER_GROUP_ID,
     )
 
     Rank.objects.create(
@@ -92,7 +97,7 @@ def test_same_threshold_can_exist_in_different_groups():
 @pytest.mark.django_db
 def test_ranks_are_ordered_by_threshold():
     configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
 
     Rank.objects.create(
@@ -119,10 +124,10 @@ def test_ranks_are_ordered_by_threshold():
 @pytest.mark.django_db
 def test_configurations_are_independent():
     first_configuration = GroupGameConfiguration.objects.create(
-        group_id="group-1",
+        group_id=GROUP_ID,
     )
     second_configuration = GroupGameConfiguration.objects.create(
-        group_id="group-2",
+        group_id=OTHER_GROUP_ID,
     )
 
     Rank.objects.create(
