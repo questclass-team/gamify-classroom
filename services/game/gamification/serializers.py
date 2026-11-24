@@ -199,6 +199,7 @@ class BadgeAwardSerializer(serializers.ModelSerializer):
 class StudentGroupStateSerializer(serializers.Serializer):
     groupId = serializers.UUIDField(source="group_id")
     nickname = serializers.CharField(allow_null=True)
+    avatar = serializers.CharField(allow_null=True)
     currencyName = serializers.CharField(source="currency_name")
     currencyIconUrl = serializers.CharField(source="currency_icon_url", allow_null=True)
     balance = serializers.IntegerField()
@@ -215,6 +216,7 @@ class RankingQuerySerializer(serializers.Serializer):
 class RankingEntrySerializer(serializers.Serializer):
     position = serializers.IntegerField()
     nickname = serializers.CharField(allow_null=True)
+    avatar = serializers.CharField(allow_null=True)
     balance = serializers.IntegerField()
     rank = RankSerializer(allow_null=True, read_only=True)
     badgeCount = serializers.IntegerField(source="badge_count")

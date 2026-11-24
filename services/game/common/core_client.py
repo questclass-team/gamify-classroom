@@ -18,6 +18,7 @@ class CoreUnavailable(Exception):
 class RosterMember:
     student_id: str
     nickname: str | None
+    avatar: str | None
 
 
 class CoreClient:
@@ -78,15 +79,21 @@ class CoreClient:
                 raise CoreUnavailable
             student_id = member.get("studentId")
             nickname = member.get("nickname")
-            if not isinstance(student_id, str) or not (
-                nickname is None or isinstance(nickname, str)
+            # Older Core omits the avatar; Game passes keys through unvalidated.
+            avatar = member.get("avatar")
+            if (
+                not isinstance(student_id, str)
+                or not (nickname is None or isinstance(nickname, str))
+                or not (avatar is None or isinstance(avatar, str))
             ):
                 raise CoreUnavailable
             try:
                 student_id = str(UUID(student_id))
             except ValueError as exc:
                 raise CoreUnavailable from exc
-            roster.append(RosterMember(student_id=student_id, nickname=nickname))
+            roster.append(
+                RosterMember(student_id=student_id, nickname=nickname, avatar=avatar)
+            )
         return roster
 
     def ensure_group_access(

@@ -304,6 +304,7 @@ def get_student_group_state(
     group_id: UUID,
     student_id: UUID,
     nickname: str | None,
+    avatar: str | None,
 ) -> dict[str, object]:
     configuration = get_group_game_config(group_id=group_id)
     ranks = list(configuration.ranks.order_by("threshold", "id"))
@@ -318,6 +319,7 @@ def get_student_group_state(
     return {
         "group_id": group_id,
         "nickname": nickname,
+        "avatar": avatar,
         "currency_name": configuration.currency_name,
         "currency_icon_url": _currency_icon_url(configuration),
         "balance": balance,
@@ -337,7 +339,7 @@ def get_group_ranking(
 ) -> dict[str, object]:
     """Rank every roster member; the number of queries does not depend on its size.
 
-    Entries carry only the nickname, never the student ID (NFR-03). ``viewer_id`` is
+    Entries carry only the nickname and avatar, never the student ID (NFR-03). ``viewer_id`` is
     the calling student's ID, or ``None`` for a teacher.
     """
     configuration = get_group_game_config(group_id=group_id)
@@ -360,6 +362,7 @@ def get_group_ranking(
         {
             "student_id": member.student_id,
             "nickname": member.nickname,
+            "avatar": member.avatar,
             "balance": balances.get(member.student_id, 0),
             "badge_count": badge_counts.get(member.student_id, 0),
         }
@@ -389,6 +392,7 @@ def get_group_ranking(
             {
                 "position": position,
                 "nickname": row["nickname"],
+                "avatar": row["avatar"],
                 "balance": row["balance"],
                 "rank": _rank_for_balance(ranks, row["balance"]),
                 "badge_count": row["badge_count"],
