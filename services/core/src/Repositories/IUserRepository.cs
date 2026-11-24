@@ -36,6 +36,13 @@ namespace QuestClass.Core.Repositories
 
         Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Sets the nickname of the (tracked) account and saves it; false when another account, deleted ones included,
+        /// already has it in any letter case (also when a concurrent request took it a moment earlier). On false the
+        /// account is left unchanged.
+        /// </summary>
+        Task<bool> TrySetNicknameAsync(User user, string nickname, CancellationToken cancellationToken = default);
+
         /// <summary>Soft-deletes the account: the row stays, it only disappears from queries.</summary>
         Task DeleteAsync(User user, CancellationToken cancellationToken = default);
     }

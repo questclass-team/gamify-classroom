@@ -8,5 +8,8 @@ namespace QuestClass.Core.Features.Auth.Shared.Authorization
         public const string Teacher = "Teacher";
 
         public const string Student = "Student";
+
+        /// <summary>Teachers and students, not admins; the endpoint then checks which groups the caller may see.</summary>
+        public const string TeacherOrStudent = "TeacherOrStudent";
     }
 }

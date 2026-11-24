@@ -84,5 +84,87 @@ namespace QuestClass.Core.UnitTests.Entities
 
             user.DisplayName.ShouldBe(expected);
         }
+
+        [Theory]
+        [InlineData("Cichy Lis")]
+        [InlineData("abc")]
+        [InlineData("123")]
+        [InlineData("Łucznik_7")]
+        [InlineData("a.b-c_d e")]
+        [InlineData("Волк")]
+        [InlineData("狐狸王")]
+        [InlineData("نمر٣")]
+        [InlineData("नमस्ते")]
+        [InlineData("  Cichy Lis \t")]
+        [InlineData("Lis  Cichy")]
+        public void IsValidNickname_WhenLettersDigitsAndAllowedSeparators_ShouldBeTrue(string nickname)
+        {
+            User.IsValidNickname(nickname).ShouldBeTrue();
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("ab")]
+        [InlineData("  ab  ")]
+        [InlineData("_abc")]
+        [InlineData("-abc")]
+        [InlineData(".abc")]
+        [InlineData("abc.")]
+        [InlineData("abc_")]
+        [InlineData("ab!c")]
+        [InlineData("a@bc")]
+        [InlineData("ab\tc")]
+        [InlineData("ab\ncd")]
+        [InlineData("x²y")]
+        [InlineData("lis 😀")]
+        [InlineData("\u0301abc")]
+        [InlineData("ab\u200Bcd")]
+        public void IsValidNickname_WhenBreakingTheRules_ShouldBeFalse(string nickname)
+        {
+            User.IsValidNickname(nickname).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void IsValidNickname_ShouldMeasureTheTrimmedNfcNickname()
+        {
+            User.IsValidNickname(new string('a', User.NicknameMaxLength)).ShouldBeTrue();
+            User.IsValidNickname($"  {new string('a', User.NicknameMaxLength)}  ").ShouldBeTrue();
+            User.IsValidNickname(new string('a', User.NicknameMaxLength + 1)).ShouldBeFalse();
+
+            // "é" typed as "e" + combining accent is two characters, but one after composing to NFC.
+            var decomposed = string.Concat(Enumerable.Repeat("e\u0301", User.NicknameMaxLength));
+            User.IsValidNickname(decomposed).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void IsValidNickname_WhenTextIsNotValidUtf16_ShouldBeFalseWithoutThrowing()
+        {
+            User.IsValidNickname("abc\uD800").ShouldBeFalse();
+            User.IsValidNickname("\uDC00abc").ShouldBeFalse();
+        }
+
+        [Fact]
+        public void NormalizeNickname_ShouldTrimAndComposeToNfc()
+        {
+            User.NormalizeNickname("  Kre\u0301t \t").ShouldBe("Krét");
+        }
+
+        [Fact]
+        public void Nickname_ShouldBeNullUntilSetAndStoredNormalized()
+        {
+            var user = new User
+            {
+                Login = "kwojcik",
+                FirstName = "Katarzyna",
+                LastName = "Wójcik",
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            user.Nickname.ShouldBeNull();
+
+            user.Nickname = "  Cichy Lis ";
+
+            user.Nickname.ShouldBe("Cichy Lis");
+        }
     }
 }
