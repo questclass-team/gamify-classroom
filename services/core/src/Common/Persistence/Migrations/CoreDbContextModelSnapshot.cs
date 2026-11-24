@@ -181,6 +181,17 @@ namespace QuestClass.Core.Common.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("login");
 
+                    b.Property<string>("Nickname")
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("nickname");
+
+                    b.Property<string>("NicknameKey")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("nickname_key")
+                        .HasComputedColumnSql("lower(nickname COLLATE \"und-x-icu\")", true);
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -199,6 +210,10 @@ namespace QuestClass.Core.Common.Persistence.Migrations
                     b.HasIndex("Login")
                         .IsUnique()
                         .HasDatabaseName("ix_users_login");
+
+                    b.HasIndex("NicknameKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_nickname_key");
 
                     b.ToTable("users", "core", t =>
                         {

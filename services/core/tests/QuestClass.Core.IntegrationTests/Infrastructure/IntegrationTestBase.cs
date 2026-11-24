@@ -42,18 +42,23 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
             return Fixture.Factory.Services.CreateScope();
         }
 
-        /// <summary>An imported account, as the CSV import would create it.</summary>
+        /// <summary>
+        /// An imported account, as the CSV import would create it; <paramref name="nickname"/> as if the student had
+        /// set it.
+        /// </summary>
         protected async Task<User> AddUserAsync(
             string login,
             Role role = Role.Student,
             string firstName = "Imported",
-            string lastName = "Name")
+            string lastName = "Name",
+            string? nickname = null)
         {
             var user = new User
             {
                 Login = login,
                 FirstName = firstName,
                 LastName = lastName,
+                Nickname = nickname,
                 Role = role,
                 CreatedAt = DateTimeOffset.UtcNow
             };

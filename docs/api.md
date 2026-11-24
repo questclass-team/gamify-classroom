@@ -121,6 +121,45 @@ them.
 Game checks that a group is the caller's by calling `GET /api/core/groups/{groupId}` with the caller's token: `200`
 means it is, `401`/`403`/`404` that it is not.
 
+### Student profile, student groups and group roster
+
+A student's nickname is the only name other students ever see (rankings, FR-21, NFR-03). It is `null` until the student
+sets it and is never replaced by a name or login.
+
+| Endpoint | Who | Request | Responses |
+|---|---|---|---|
+| `GET /api/core/me/profile` | student | — | `200 StudentProfile` |
+| `PUT /api/core/me/profile` | student | `{ "nickname" }` | `200 StudentProfile` with the nickname as stored (trimmed); `400` invalid nickname (`errors.Nickname`); `409 Profile.NicknameTaken` another account has it in any letter case |
+| `GET /api/core/me/groups` | student | — | `200 MyGroup[]`: the groups the caller is a member of, in Polish alphabetical order like the teacher's list; `[]` when none |
+| `GET /api/core/groups/{groupId}/roster` | the group's teacher or a student in it | — | `200 RosterEntry[]`: current members only; `404 Groups.NotFound` missing or deleted group, another teacher's group, a group the student is not in, or an id that is not a UUID |
+
+Other roles get `403` (admins too, also for the roster), `401` without a token. `GET`/`PUT /me/profile` also answer
+`401 Auth.SessionUserNotFound` when the account was deleted after login.
+
+**Nickname rules.** Trimmed and composed to Unicode NFC first, then 3–24 characters: letters (with their combining
+marks) and digits of any script, spaces, `_`, `-` and `.`; it starts and ends with a letter or digit. Unique across the
+whole system ignoring letter case (`Cichy Lis` blocks `cichy lis` and `CICHY LIS`, `ВОЛК` blocks `волк`), but not
+ignoring accents (`Kret` and `Krét` are different). A deleted account keeps its nickname, because it is restored on
+re-import. Only students set one; saving one's own nickname again, or with other letter case, is allowed.
+
+```json
+// StudentProfile
+{ "nickname": "Cichy Lis" }          // { "nickname": null } until set
+
+// MyGroup
+{ "id": "<uuid>", "name": "Algorytmy – grupa 1", "teacherName": "Jan Kowalski", "joinedAt": "2026-11-18T10:15:00+00:00" }
+
+// RosterEntry: by nickname in Polish alphabetical order, students without one last; no names or logins
+{ "studentId": "<uuid>", "nickname": "Cichy Lis" }
+
+// 400 from PUT /me/profile
+{ "title": "Validation Failed", "status": 400, "errors": { "Nickname": ["Nickname must have 3 to 24 characters: …"] } }
+```
+
+Game checks that a student or teacher belongs to a group by calling `GET /api/core/groups/{groupId}/roster` with the
+caller's token: `200` means they do (a student finds their own id, the token's `sub`, in the list), `401`/`403`/`404`
+that they do not. The same list gives the nicknames for rankings.
+
 ## Game service
 
 ### `GET /api/game/auth/me/`
@@ -235,8 +274,8 @@ http://localhost:8080/api/game/schema/
 
 ## Current scope
 
-Core issues the tokens (login, refresh, logout, `/me`), imports accounts and keeps the teachers' groups; Game
-verifies the same tokens.
+Core issues the tokens (login, refresh, logout, `/me`), imports accounts, keeps the teachers' groups and the students'
+nicknames, and lists a student's groups and a group's roster; Game verifies the same tokens.
 Both use the same `JWT_SECRET` (Core: `Jwt__Secret`), issuer `questclass-core`, audience `questclass` and
 `HS256` — checked end to end: a token from Core is accepted by `GET /api/game/auth/me/` with the same user id
 and role.

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using QuestClass.Core.Common.Persistence;
+using QuestClass.Core.Common.Persistence.Configurations;
 using QuestClass.Core.Common.Persistence.SoftDelete;
 using QuestClass.Core.Entities;
 
@@ -92,6 +94,32 @@ namespace QuestClass.Core.Repositories
             _dbContext.Users.Update(user);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<bool> TrySetNicknameAsync(User user, string nickname, CancellationToken cancellationToken = default)
+        {
+            var previousNickname = user.Nickname;
+            user.Nickname = nickname;
+            _dbContext.Users.Update(user);
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+            catch (DbUpdateException exception)
+                when (exception.InnerException is PostgresException
+                {
+                    SqlState: PostgresErrorCodes.UniqueViolation,
+                    ConstraintName: UserConfiguration.NicknameIndexName
+                })
+            {
+                // The case-insensitive unique index is the only check, so two requests racing for one nickname
+                // cannot both win.
+                user.Nickname = previousNickname;
+                _dbContext.Entry(user).State = EntityState.Unchanged;
+                return false;
+            }
         }
 
         public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)

@@ -92,7 +92,10 @@ namespace QuestClass.Core.Features.Auth
                 .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
                 .AddPolicy(AuthPolicies.Admin, policy => policy.RequireRole(Role.Admin.ToApiName()))
                 .AddPolicy(AuthPolicies.Teacher, policy => policy.RequireRole(Role.Teacher.ToApiName()))
-                .AddPolicy(AuthPolicies.Student, policy => policy.RequireRole(Role.Student.ToApiName()));
+                .AddPolicy(AuthPolicies.Student, policy => policy.RequireRole(Role.Student.ToApiName()))
+                .AddPolicy(
+                    AuthPolicies.TeacherOrStudent,
+                    policy => policy.RequireRole(Role.Teacher.ToApiName(), Role.Student.ToApiName()));
         }
 
         private static void AddLoginRateLimit(this IServiceCollection services)

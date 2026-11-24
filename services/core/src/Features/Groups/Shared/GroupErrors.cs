@@ -15,6 +15,18 @@ namespace QuestClass.Core.Features.Groups.Shared
                 "The group does not exist or belongs to another teacher.");
         }
 
+        /// <summary>
+        /// The roster of a group the caller may not see: missing, deleted, another teacher's, or a group the student is
+        /// not in. One answer for all of them, with the same code as <see cref="NotFound"/>, so nobody learns that a
+        /// group exists. The game service relies on it to check membership.
+        /// </summary>
+        public static Error RosterNotFound()
+        {
+            return Error.NotFound(
+                "Groups.NotFound",
+                "The group does not exist, or the caller is neither its teacher nor a student in it.");
+        }
+
         /// <summary>Only imported student accounts can join a group: not teachers, admins or deleted accounts.</summary>
         public static Error StudentNotFound()
         {

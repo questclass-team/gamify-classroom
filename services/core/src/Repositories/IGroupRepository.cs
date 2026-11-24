@@ -21,6 +21,25 @@ namespace QuestClass.Core.Repositories
         Task<Group?> GetOwnedAsync(Guid groupId, Guid teacherId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Groups the student is a member of, with their teacher and when the student joined, by name in Polish
+        /// alphabetical order like <see cref="GetByTeacherAsync"/>. Deleted groups are left out; a group whose teacher
+        /// account was deleted stays, because the group itself is still active.
+        /// </summary>
+        Task<IReadOnlyList<StudentGroup>> GetByStudentAsync(Guid studentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// The group, or null when it does not exist, is deleted or the student is not its member: callers cannot tell
+        /// these cases apart.
+        /// </summary>
+        Task<Group?> GetForMemberAsync(Guid groupId, Guid studentId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Students of the group with only their nicknames, never names or logins (NFR-03): by nickname in Polish
+        /// alphabetical order, students without one last, then by id. Deleted student accounts are left out.
+        /// </summary>
+        Task<IReadOnlyList<RosterEntry>> GetRosterAsync(Guid groupId, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Students of the group with the time they joined, by name in Polish alphabetical order. Deleted student
         /// accounts are left out.
         /// </summary>
@@ -42,4 +61,8 @@ namespace QuestClass.Core.Repositories
     public sealed record GroupWithStudentCount(Group Group, int StudentCount);
 
     public sealed record GroupStudent(User Student, DateTimeOffset AddedAt);
+
+    public sealed record StudentGroup(Group Group, User Teacher, DateTimeOffset JoinedAt);
+
+    public sealed record RosterEntry(Guid StudentId, string? Nickname);
 }
