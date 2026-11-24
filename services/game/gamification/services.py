@@ -3,8 +3,10 @@ from uuid import UUID
 
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
 from django.utils import timezone
+
+from common.core_client import RosterMember
 
 from .models import (
     CURRENCY_ICON_CONTENT_TYPES,
@@ -275,3 +277,129 @@ def revoke_badge(*, group_id: UUID, student_id: UUID, award_id: int) -> None:
     ).update(revoked_at=timezone.now())
     if not updated and not awards.exists():
         raise BadgeAwardNotFoundError
+
+
+RANKING_BY_POINTS = "points"
+RANKING_BY_BADGES = "badges"
+RANKING_CRITERIA = (RANKING_BY_POINTS, RANKING_BY_BADGES)
+
+
+def _rank_for_balance(ranks: list[Rank], balance: int) -> Rank | None:
+    """Highest rank reached; ``ranks`` must be sorted by threshold ascending."""
+    reached = [rank for rank in ranks if rank.threshold <= balance]
+    return reached[-1] if reached else None
+
+
+def _next_rank_for_balance(ranks: list[Rank], balance: int) -> Rank | None:
+    """Lowest rank not reached yet; ``ranks`` must be sorted by threshold ascending."""
+    return next((rank for rank in ranks if rank.threshold > balance), None)
+
+
+def _currency_icon_url(configuration: GroupGameConfiguration) -> str | None:
+    return configuration.currency_icon.url if configuration.currency_icon else None
+
+
+def get_student_group_state(
+    *,
+    group_id: UUID,
+    student_id: UUID,
+    nickname: str | None,
+) -> dict[str, object]:
+    configuration = get_group_game_config(group_id=group_id)
+    ranks = list(configuration.ranks.order_by("threshold", "id"))
+    balance = (
+        StudentProgress.objects.filter(
+            group_id=str(group_id), student_id=str(student_id)
+        )
+        .values_list("balance", flat=True)
+        .first()
+    ) or 0
+
+    return {
+        "group_id": group_id,
+        "nickname": nickname,
+        "currency_name": configuration.currency_name,
+        "currency_icon_url": _currency_icon_url(configuration),
+        "balance": balance,
+        "rank": _rank_for_balance(ranks, balance),
+        "next_rank": _next_rank_for_balance(ranks, balance),
+        "badges": list_student_badges(group_id=group_id, student_id=student_id),
+        "rewards": get_reward_history(group_id=group_id, student_id=student_id),
+    }
+
+
+def get_group_ranking(
+    *,
+    group_id: UUID,
+    roster: list[RosterMember],
+    by: str,
+    viewer_id: str | None,
+) -> dict[str, object]:
+    """Rank every roster member; the number of queries does not depend on its size.
+
+    Entries carry only the nickname, never the student ID (NFR-03). ``viewer_id`` is
+    the calling student's ID, or ``None`` for a teacher.
+    """
+    configuration = get_group_game_config(group_id=group_id)
+    ranks = list(configuration.ranks.order_by("threshold", "id"))
+    balances = dict(
+        StudentProgress.objects.filter(group_id=str(group_id)).values_list(
+            "student_id", "balance"
+        )
+    )
+    badge_counts = dict(
+        BadgeAward.objects.filter(
+            badge__group_id=str(group_id), revoked_at__isnull=True
+        )
+        .values("student_id")
+        .annotate(count=Count("id"))
+        .values_list("student_id", "count")
+    )
+
+    rows = [
+        {
+            "student_id": member.student_id,
+            "nickname": member.nickname,
+            "balance": balances.get(member.student_id, 0),
+            "badge_count": badge_counts.get(member.student_id, 0),
+        }
+        for member in roster
+    ]
+    primary, secondary = (
+        ("balance", "badge_count")
+        if by == RANKING_BY_POINTS
+        else ("badge_count", "balance")
+    )
+    rows.sort(
+        key=lambda row: (
+            -row[primary],
+            -row[secondary],
+            row["nickname"] is None,
+            (row["nickname"] or "").casefold(),
+            row["student_id"],
+        )
+    )
+
+    entries = []
+    position = 0
+    for index, row in enumerate(rows):
+        if index == 0 or row[primary] != rows[index - 1][primary]:
+            position = index + 1
+        entries.append(
+            {
+                "position": position,
+                "nickname": row["nickname"],
+                "balance": row["balance"],
+                "rank": _rank_for_balance(ranks, row["balance"]),
+                "badge_count": row["badge_count"],
+                "is_me": viewer_id is not None and row["student_id"] == viewer_id,
+            }
+        )
+
+    return {
+        "group_id": group_id,
+        "by": by,
+        "currency_name": configuration.currency_name,
+        "currency_icon_url": _currency_icon_url(configuration),
+        "entries": entries,
+    }

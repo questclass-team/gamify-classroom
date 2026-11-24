@@ -12,6 +12,7 @@ from .models import (
     PointReward,
     Rank,
 )
+from .services import RANKING_BY_POINTS, RANKING_CRITERIA
 
 
 class RankSerializer(serializers.ModelSerializer):
@@ -193,3 +194,36 @@ class BadgeAwardSerializer(serializers.ModelSerializer):
             "createdAt",
         )
         read_only_fields = fields
+
+
+class StudentGroupStateSerializer(serializers.Serializer):
+    groupId = serializers.UUIDField(source="group_id")
+    nickname = serializers.CharField(allow_null=True)
+    currencyName = serializers.CharField(source="currency_name")
+    currencyIconUrl = serializers.CharField(source="currency_icon_url", allow_null=True)
+    balance = serializers.IntegerField()
+    rank = RankSerializer(allow_null=True, read_only=True)
+    nextRank = RankSerializer(source="next_rank", allow_null=True, read_only=True)
+    badges = BadgeAwardSerializer(many=True, read_only=True)
+    rewards = RewardHistoryItemSerializer(many=True, read_only=True)
+
+
+class RankingQuerySerializer(serializers.Serializer):
+    by = serializers.ChoiceField(choices=RANKING_CRITERIA, default=RANKING_BY_POINTS)
+
+
+class RankingEntrySerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    nickname = serializers.CharField(allow_null=True)
+    balance = serializers.IntegerField()
+    rank = RankSerializer(allow_null=True, read_only=True)
+    badgeCount = serializers.IntegerField(source="badge_count")
+    isMe = serializers.BooleanField(source="is_me")
+
+
+class GroupRankingSerializer(serializers.Serializer):
+    groupId = serializers.UUIDField(source="group_id")
+    by = serializers.ChoiceField(choices=RANKING_CRITERIA)
+    currencyName = serializers.CharField(source="currency_name")
+    currencyIconUrl = serializers.CharField(source="currency_icon_url", allow_null=True)
+    entries = RankingEntrySerializer(many=True, read_only=True)

@@ -9,8 +9,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.core_client import CoreClient, CoreGroupNotFound, CoreUnavailable
-from common.permissions import IsTeacher
+from common.core_client import (
+    CoreClient,
+    CoreGroupNotFound,
+    CoreUnavailable,
+    RosterMember,
+)
+from common.permissions import IsStudent, IsTeacher, IsTeacherOrStudent
 
 from .models import GroupGameConfiguration
 from .serializers import (
@@ -21,7 +26,10 @@ from .serializers import (
     CreateBadgeSerializer,
     CurrencyIconResponseSerializer,
     GroupGameConfigSerializer,
+    GroupRankingSerializer,
+    RankingQuerySerializer,
     RewardHistoryItemSerializer,
+    StudentGroupStateSerializer,
     StudentProgressSerializer,
     UpdateGameConfigSerializer,
 )
@@ -36,7 +44,9 @@ from .services import (
     create_badge,
     delete_currency_icon,
     get_group_game_config,
+    get_group_ranking,
     get_reward_history,
+    get_student_group_state,
     get_student_progress,
     list_group_badges,
     list_student_badges,
@@ -86,6 +96,32 @@ def ensure_student_in_group(
         raise NotFound("Group or student not found.") from exc
     except CoreUnavailable as exc:
         raise CoreServiceUnavailable from exc
+
+
+def get_group_roster(request: Request, group_id: UUID) -> list[RosterMember]:
+    authorization = request.headers.get("Authorization", "")
+    try:
+        return CoreClient().get_group_roster(group_id, authorization)
+    except CoreGroupNotFound as exc:
+        raise NotFound("Group not found.") from exc
+    except CoreUnavailable as exc:
+        raise CoreServiceUnavailable from exc
+
+
+def find_calling_student(request: Request, roster: list[RosterMember]) -> RosterMember:
+    """Return the caller's roster entry; the student ID always comes from the token."""
+    try:
+        student_id = str(UUID(str(request.auth["sub"])))
+    except ValueError as exc:
+        raise NotFound("Group not found.") from exc
+
+    member = next(
+        (member for member in roster if member.student_id == student_id),
+        None,
+    )
+    if member is None:
+        raise NotFound("Group not found.")
+    return member
 
 
 def config_response(configuration: GroupGameConfiguration) -> Response:
@@ -378,3 +414,56 @@ class StudentBadgeAwardDetailView(APIView):
         except BadgeAwardNotFoundError as exc:
             raise NotFound("Badge award not found.") from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StudentGroupStateView(APIView):
+    permission_classes = (IsAuthenticated, IsStudent)
+
+    @extend_schema(
+        responses=StudentGroupStateSerializer,
+        summary="Get the calling student's state in a group",
+        description=(
+            "Balance, rank, next rank, active badges and point rewards of the "
+            "calling student. Only members of the group can read it."
+        ),
+    )
+    def get(self, request: Request, group_id: UUID) -> Response:
+        roster = get_group_roster(request, group_id)
+        member = find_calling_student(request, roster)
+        state = get_student_group_state(
+            group_id=group_id,
+            student_id=UUID(member.student_id),
+            nickname=member.nickname,
+        )
+        return Response(StudentGroupStateSerializer(state).data)
+
+
+class GroupRankingView(APIView):
+    permission_classes = (IsAuthenticated, IsTeacherOrStudent)
+
+    @extend_schema(
+        parameters=[RankingQuerySerializer],
+        responses=GroupRankingSerializer,
+        summary="Get a group's ranking by nickname",
+        description=(
+            "Every current member ranked by points or by active badges. Entries "
+            "show only nicknames, never names, logins or student IDs."
+        ),
+    )
+    def get(self, request: Request, group_id: UUID) -> Response:
+        roster = get_group_roster(request, group_id)
+        viewer_id = None
+        if request.auth.get("role") == "student":
+            viewer_id = find_calling_student(request, roster).student_id
+
+        # A plain dict, so an empty `?by=` is rejected instead of meaning "default".
+        query = RankingQuerySerializer(data=request.query_params.dict())
+        query.is_valid(raise_exception=True)
+
+        ranking = get_group_ranking(
+            group_id=group_id,
+            roster=roster,
+            by=query.validated_data["by"],
+            viewer_id=viewer_id,
+        )
+        return Response(GroupRankingSerializer(ranking).data)
