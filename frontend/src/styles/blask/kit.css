@@ -925,7 +925,8 @@
     width: min(44rem, calc(100% - 2rem));
   }
 
-  .blask-dialog[open]:has(> .blask-dialog__body) {
+  /* Head and foot stay, the body scrolls (in a form dialog the form is display: contents). */
+  .blask-dialog[open]:has(> .blask-dialog__body, > form > .blask-dialog__body) {
     display: flex;
     flex-direction: column;
   }

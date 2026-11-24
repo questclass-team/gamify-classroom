@@ -1,4 +1,4 @@
-import type { Badge, CurrentUser, GroupGameConfig } from '../api/types'
+import type { AvatarKey, Badge, CurrentUser, GroupGameConfig } from '../api/types'
 
 export interface MockGroup {
   id: string
@@ -44,6 +44,21 @@ export const mockNicknames = new Map<string, string | null>([
   ['u-student6', 'Zielony Smok'],
   ['u-student7', 'Bystry Bóbr'],
   ['u-student8', 'Mała Mi'],
+])
+
+/**
+ * Student avatars (Core `User.Avatar`): one of AVATAR_KEYS, null until chosen. `student` starts
+ * without one (initials in the header, the neutral mark in the ranking), and so do a few others.
+ */
+export const mockAvatars = new Map<string, AvatarKey | null>([
+  ['u-student', null],
+  ['u-student2', 'fox'],
+  ['u-student3', 'owl'],
+  ['u-student4', 'cat'],
+  ['u-student5', null],
+  ['u-student6', 'dragon'],
+  ['u-student7', null],
+  ['u-student8', 'comet'],
 ])
 
 /** Valid in LDAP but never imported: login must be rejected with 403. */

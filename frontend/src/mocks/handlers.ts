@@ -2,6 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { rankForBalance, rankProgress } from '../components/blask/ranks'
 import { nicknameError, normalizeNickname } from '../pages/student/nickname'
 import {
+  AVATAR_KEYS,
   BADGE_DESCRIPTION_MAX_LENGTH,
   BADGE_ICONS,
   BADGE_NAME_MAX_LENGTH,
@@ -38,15 +39,19 @@ import {
   type Role,
   type StudentGroupState,
   type StudentProfile,
+  type AvatarKey,
+  type RosterEntry,
   type StudentProgress,
   type StudentSummary,
   type UpdateGameConfigRequest,
   type UpdateProfileRequest,
+  type UpdateAvatarRequest,
   type UserImportReport,
 } from '../api/types'
 import {
   DEFAULT_GAME_CONFIG,
   MOCK_PASSWORD,
+  mockAvatars,
   mockBadgeAwards,
   mockBadges,
   mockGameConfigs,
@@ -83,6 +88,14 @@ function authorize(request: Request, role?: Role): CurrentUser | Response {
     return problem(403, 'Forbidden', `Requires role ${role}.`)
   }
   return user
+}
+
+/** A student's Core profile: what PUT /me/profile and /me/avatar return and the roster carries. */
+function profileOf(studentId: string): StudentProfile {
+  return {
+    nickname: mockNicknames.get(studentId) ?? null,
+    avatar: mockAvatars.get(studentId) ?? null,
+  }
 }
 
 export const handlers = [
@@ -203,9 +216,7 @@ export const handlers = [
     await delay(200)
     const student = authorize(request, 'student')
     if (student instanceof Response) return student
-    return HttpResponse.json({
-      nickname: mockNicknames.get(student.id) ?? null,
-    } satisfies StudentProfile)
+    return HttpResponse.json(profileOf(student.id))
   }),
 
   http.put('/api/core/me/profile', async ({ request }) => {
@@ -240,7 +251,28 @@ export const handlers = [
       )
     }
     mockNicknames.set(student.id, nickname)
-    return HttpResponse.json({ nickname } satisfies StudentProfile)
+    return HttpResponse.json(profileOf(student.id))
+  }),
+
+  http.put('/api/core/me/avatar', async ({ request }) => {
+    await delay(300)
+    const student = authorize(request, 'student')
+    if (student instanceof Response) return student
+    // No body or no field removes the avatar too, as in Core.
+    const body = (await request.json().catch(() => null)) as Partial<UpdateAvatarRequest> | null
+    const avatar: unknown = body?.avatar ?? null
+    if (avatar !== null && !AVATAR_KEYS.includes(avatar as AvatarKey)) {
+      return HttpResponse.json<ProblemDetails>(
+        {
+          title: 'Validation Failed',
+          status: 400,
+          errors: { Avatar: [`Avatar must be null or one of: ${AVATAR_KEYS.join(', ')}.`] },
+        },
+        { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+      )
+    }
+    mockAvatars.set(student.id, avatar as AvatarKey | null)
+    return HttpResponse.json(profileOf(student.id))
   }),
 
   http.get('/api/core/me/groups', async ({ request }) => {
@@ -263,6 +295,30 @@ export const handlers = [
       })
       .sort((a, b) => a.name.localeCompare(b.name, 'pl'))
     return HttpResponse.json(groups)
+  }),
+
+  http.get('/api/core/groups/:groupId/roster', async ({ request, params }) => {
+    await delay(200)
+    const caller = authorize(request)
+    if (caller instanceof Response) return caller
+    if (caller.role === 'admin')
+      return problem(403, 'Forbidden', 'Requires role teacher or student.')
+    const group = mockGroups.find((candidate) => candidate.id === params.groupId)
+    const allowed =
+      group !== undefined &&
+      (caller.role === 'teacher'
+        ? group.teacherId === caller.id
+        : group.members.some((member) => member.studentId === caller.id))
+    if (!allowed) return problem(404, 'Groups.NotFound', 'Group not found.')
+    const roster = group.members
+      .map(({ studentId }): RosterEntry => ({ studentId, ...profileOf(studentId) }))
+      .sort((a, b) => {
+        if (a.nickname === null || b.nickname === null) {
+          return Number(a.nickname === null) - Number(b.nickname === null)
+        }
+        return a.nickname.localeCompare(b.nickname, 'pl')
+      })
+    return HttpResponse.json(roster)
   }),
 
   http.post('/api/core/groups/:groupId/students', async ({ request, params }) => {
@@ -539,7 +595,7 @@ export const handlers = [
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
     return HttpResponse.json({
       groupId: group.id,
-      nickname: mockNicknames.get(caller.id) ?? null,
+      ...profileOf(caller.id),
       currencyName: config.currencyName,
       currencyIconUrl: config.currencyIconUrl,
       balance,
@@ -606,7 +662,7 @@ function rankingEntries(group: MockGroup, by: RankingBy, caller: CurrentUser): R
     const balance = balanceOf(group.id, studentId)
     return {
       key: studentId,
-      nickname: mockNicknames.get(studentId) ?? null,
+      ...profileOf(studentId),
       balance,
       rank: rankForBalance(balance, ranks),
       badgeCount: activeAwards(group.id, studentId).length,
@@ -631,9 +687,9 @@ function rankingEntries(group: MockGroup, by: RankingBy, caller: CurrentUser): R
       a.key.localeCompare(b.key),
   )
   let position = 0
-  return rows.map(({ nickname, balance, rank, badgeCount, isMe }, index) => {
+  return rows.map(({ nickname, avatar, balance, rank, badgeCount, isMe }, index) => {
     if (index === 0 || primary(rows[index - 1]) !== primary(rows[index])) position = index + 1
-    return { position, nickname, balance, rank, badgeCount, isMe }
+    return { position, nickname, avatar, balance, rank, badgeCount, isMe }
   })
 }
 

@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import type { AvatarKey } from '../api/types'
+import { Avatar } from '../components/blask/Avatar'
 import { ChevronIcon } from '../components/blask/icons'
 
 /** Up to two initials for the avatar disc: "Ewa Nowak" → "EN", "Cichy_Lis" → "C". */
@@ -13,18 +15,22 @@ function initials(name: string) {
 }
 
 /**
- * The header's account button (avatar disc, the name from `sm` up, a chevron) and its small menu:
- * a disclosure, not an ARIA menu. Esc, a click outside or leaving it with Tab closes it; opening
- * it moves the focus into it (the first button, or the panel itself when it holds only text).
+ * The header's account button (the student's avatar or an initials disc, the name from `sm` up, a
+ * chevron) and its small menu: a disclosure, not an ARIA menu. Esc, a click outside or leaving it
+ * with Tab closes it; opening it moves the focus into it (the first button, or the panel itself
+ * when it holds only text).
  */
 export function AccountMenu({
   buttonRef,
   label,
+  avatar = null,
   children,
 }: {
   buttonRef?: RefObject<HTMLButtonElement | null>
   /** The name on the button: the student's nickname, everyone else's name. */
   label: string
+  /** The signed-in student's chosen avatar; initials are shown when there is none. */
+  avatar?: AvatarKey | null
   /** The menu's content; `close` closes it (call it before an action that opens a dialog). */
   children: (close: () => void) => ReactNode
 }) {
@@ -67,9 +73,13 @@ export function AccountMenu({
         onClick={() => setOpen((current) => !current)}
         className="blask-account"
       >
-        <span aria-hidden="true" className="blask-avatar">
-          {initials(label)}
-        </span>
+        {avatar !== null ? (
+          <Avatar avatar={avatar} size={36} />
+        ) : (
+          <span aria-hidden="true" className="blask-avatar">
+            {initials(label)}
+          </span>
+        )}
         <span className="max-w-[11rem] truncate max-sm:sr-only">
           <span className="sr-only">Konto: </span>
           {label}

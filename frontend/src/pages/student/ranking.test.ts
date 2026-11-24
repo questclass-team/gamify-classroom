@@ -10,7 +10,7 @@ import {
 } from './ranking'
 
 function entry(position: number, nickname: string | null, isMe = false): RankingEntry {
-  return { position, nickname, balance: 100, rank: null, badgeCount: 1, isMe }
+  return { position, nickname, avatar: null, balance: 100, rank: null, badgeCount: 1, isMe }
 }
 
 function ranking(entries: RankingEntry[], by: GroupRanking['by'] = 'points'): GroupRanking {

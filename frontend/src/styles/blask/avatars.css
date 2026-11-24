@@ -1,0 +1,127 @@
+/*
+ * Blask avatars: the picker (components/blask/AvatarPicker.tsx). The discs themselves are inline
+ * SVG (Avatar.tsx) with their colours in art.ts; everything here reads the tokens, so it follows
+ * the light / dark mode by itself.
+ */
+@layer components {
+  /* ---- Picker: native radios as tiles; the chosen one is lit with a cobalt ring and a check -- */
+
+  .blask-avatar-picker {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+
+  .blask-avatar-picker__legend {
+    margin-bottom: 0.75rem;
+    color: var(--color-blask-graphite);
+    font-size: 0.875rem;
+  }
+
+  .blask-avatar-picker__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr));
+    gap: 0.375rem;
+  }
+
+  .blask-avatar-option {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 0.375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .blask-avatar-option:hover {
+    background: var(--blask-row-hover);
+  }
+
+  .blask-avatar-option:has(:checked) {
+    background: var(--color-blask-peri-soft);
+    border-color: var(--color-blask-peri);
+  }
+
+  .blask-avatar-option:has(:focus-visible) {
+    outline: 2px solid var(--color-blask-cobalt);
+    outline-offset: 2px;
+  }
+
+  .blask-avatar-option:has(:disabled) {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .blask-avatar-option__disc {
+    position: relative;
+    display: grid;
+    border-radius: 999px;
+  }
+
+  .blask-avatar-option:has(:checked) .blask-avatar-option__disc {
+    box-shadow:
+      0 0 0 2px var(--color-blask-peri-soft),
+      0 0 0 4px var(--color-blask-cobalt);
+  }
+
+  .blask-avatar-option__check {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--color-blask-cobalt);
+    color: var(--color-blask-white);
+    box-shadow: 0 0 0 2px var(--color-blask-peri-soft);
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  .blask-avatar-option:has(:checked) .blask-avatar-option__check {
+    opacity: 1;
+    transform: none;
+  }
+
+  .blask-avatar-option__label {
+    color: var(--color-blask-graphite);
+    font-size: 0.875rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .blask-avatar-option:has(:checked) .blask-avatar-option__label {
+    color: var(--color-blask-ink);
+    font-weight: 650;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blask-avatar-option {
+      transition:
+        background-color 160ms ease-out,
+        border-color 160ms ease-out;
+    }
+
+    .blask-avatar-option__disc {
+      transition:
+        box-shadow 220ms var(--blask-ease),
+        transform 160ms var(--blask-ease);
+    }
+
+    .blask-avatar-option:active .blask-avatar-option__disc {
+      transform: scale(0.94);
+    }
+
+    .blask-avatar-option__check {
+      transition:
+        opacity 160ms ease-out,
+        transform 320ms var(--blask-ease);
+    }
+  }
+}
