@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#afc0ff" stop-opacity="0"/><stop offset=".45" stop-color="#8e9bff"/><stop offset="1" stop-color="#2b3bff" stop-opacity=".2"/></linearGradient><radialGradient id="d" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#fbfaff"/><stop offset=".45" stop-color="#8e9bff"/><stop offset="1" stop-color="#6c3bf4"/></radialGradient></defs><rect width="32" height="32" rx="8" fill="#060a2b"/><rect x="15" y="3" width="2" height="26" rx="1" fill="url(#b)"/><circle cx="16" cy="19" r="5.5" fill="url(#d)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- QuestClass: the Blask four-point star, cobalt into iris around a pearl core, lighter on
+       dark tab bars. The arms are a little fuller than in the app (starShape.ts) to read at 16 px.
+       favicon.ico and the PNG icons beside it are renders of this star. -->
+  <style>
+    .a { stop-color: #fbfaff } .b { stop-color: #8e9bff } .c { stop-color: #2b3bff } .d { stop-color: #6c3bf4 }
+    @media (prefers-color-scheme: dark) {
+      .a { stop-color: #ffffff } .b { stop-color: #dfe3ff } .c { stop-color: #8e9bff } .d { stop-color: #9b7dff }
+    }
+  </style>
+  <radialGradient id="s" cx=".5" cy=".5" r=".5">
+    <stop offset="0" class="a" />
+    <stop offset=".14" class="b" />
+    <stop offset=".48" class="c" />
+    <stop offset="1" class="d" />
+  </radialGradient>
+  <path d="M16 0.5Q17.86 14.14 31.5 16Q17.86 17.86 16 31.5Q14.14 17.86 0.5 16Q14.14 14.14 16 0.5Z" fill="url(#s)" />
+</svg>
