@@ -5,8 +5,10 @@ from gamification.views import (
     BadgeListCreateView,
     CurrencyIconView,
     GroupGameConfigView,
+    GroupRankingView,
     StudentBadgeAwardDetailView,
     StudentBadgeAwardView,
+    StudentGroupStateView,
     StudentProgressView,
     StudentRewardsView,
 )
@@ -57,5 +59,15 @@ urlpatterns = [
         "groups/<uuid:group_id>/students/<uuid:student_id>/badges/<int:award_id>",
         StudentBadgeAwardDetailView.as_view(),
         name="student-badge-award-detail",
+    ),
+    path(
+        "groups/<uuid:group_id>/me",
+        StudentGroupStateView.as_view(),
+        name="student-group-state",
+    ),
+    path(
+        "groups/<uuid:group_id>/ranking",
+        GroupRankingView.as_view(),
+        name="group-ranking",
     ),
 ]

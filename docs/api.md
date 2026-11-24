@@ -347,6 +347,80 @@ if the same award was already revoked. It no longer appears in the active list; 
 | `409 Conflict` | The student already has this badge active. Only applies to awarding. |
 | `503 Service Unavailable` | Core is unavailable. |
 
+### Student state and group ranking
+
+Game reads group membership and nicknames from Core `GET /api/core/groups/{groupId}/roster`, called with the
+caller's token. Core answers only the owning teacher and member students, so a foreign or missing group is `404`
+here as well. A student is always identified by the token `sub`, never by an ID in the URL.
+
+#### `GET /api/game/groups/{groupId}/me`
+
+Student only. Returns the calling student's state in a group they belong to:
+
+```json
+{
+  "groupId": "11111111-1111-4111-8111-111111111111",
+  "nickname": "Cichy Lis",
+  "currencyName": "Złote monety",
+  "currencyIconUrl": null,
+  "balance": 120,
+  "rank": { "name": "Giermek", "threshold": 100 },
+  "nextRank": { "name": "Rycerz", "threshold": 300 },
+  "badges": [],
+  "rewards": []
+}
+```
+
+- `nickname` comes from Core and is `null` until the student sets one.
+- `balance` is `0` if the student has never been awarded points in the group.
+- `rank` is the highest rank reached and `nextRank` the lowest rank not reached yet; either is `null` when there is
+  none (no ranks configured, below the first threshold, or already at the top rank).
+- `badges` are the active badge awards, newest first, in the shape of
+  `GET /api/game/groups/{groupId}/students/{studentId}/badges`.
+- `rewards` are the point rewards, newest first, in the shape of
+  `GET /api/game/groups/{groupId}/students/{studentId}/rewards`.
+
+#### `GET /api/game/groups/{groupId}/ranking?by=points|badges`
+
+For a member student or the owning teacher. `by` defaults to `points`; any other value returns `400` with
+`{"by": [...]}`.
+
+```json
+{
+  "groupId": "11111111-1111-4111-8111-111111111111",
+  "by": "points",
+  "currencyName": "Złote monety",
+  "currencyIconUrl": null,
+  "entries": [
+    {
+      "position": 1,
+      "nickname": "Cichy Lis",
+      "balance": 320,
+      "rank": { "name": "Rycerz", "threshold": 300 },
+      "badgeCount": 2,
+      "isMe": false
+    }
+  ]
+}
+```
+
+- Every current member of the group is an entry, with balance `0` and `badgeCount` `0` if they have no data yet.
+  `badgeCount` counts active (not revoked) badge awards in this group.
+- Entries are ordered by the chosen criterion (`balance` for `points`, `badgeCount` for `badges`) descending, then by
+  the other one descending, then by nickname (case-insensitive, missing nicknames last).
+- `position` uses competition ranking on the chosen criterion only: equal values share a position and the next
+  position skips (1, 1, 3).
+- `isMe` is `true` only on the calling student's entry; it is always `false` for a teacher.
+- Entries contain only the nickname: no student ID, login or name, for any caller. A missing nickname stays `null`.
+
+| Status | Meaning |
+|---|---|
+| `400 Bad Request` | Unknown `by` value (ranking only). |
+| `401 Unauthorized` | Missing or invalid JWT. |
+| `403 Forbidden` | `me`: the caller is not a student. Ranking: the caller is neither a student nor a teacher. |
+| `404 Not Found` | Missing group, a student outside the group, or a teacher who does not own it. |
+| `503 Service Unavailable` | Core is unavailable or returned an unexpected response. |
+
 ## Local API documentation
 
 After starting Docker Compose, open:

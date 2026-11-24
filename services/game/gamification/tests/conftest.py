@@ -20,13 +20,14 @@ def token_factory() -> Callable[..., str]:
         issuer: str = "questclass-core",
         audience: str = "questclass",
         expires_in: int = 300,
+        subject: str = "123",
     ) -> str:
         now = datetime.now(UTC)
         now_timestamp = int(now.timestamp())
         payload = {
             "iss": issuer,
             "aud": audience,
-            "sub": "123",
+            "sub": subject,
             "role": role,
             "iat": now_timestamp,
             "nbf": now_timestamp,
