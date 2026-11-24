@@ -1,7 +1,5 @@
 <div align="center">
-  <a href="#">
-    <img src="docs/assets/banner.png" alt="QuestClass banner" width="100%">
-  </a>
+  <img src="docs/assets/login.png" alt="QuestClass: start screen with the faculty login" width="100%">
 
   <h3 align="center">QuestClass</h3>
   <p align="center"><i>Gamification platform for university classes · WMiI UAM</i></p>
@@ -14,7 +12,7 @@
 **Project description:** QuestClass replaces the spreadsheets that teachers use to run gamified classes. A teacher configures a story, currencies, ranks, badges and a bonus shop for each class group and awards students in a few clicks. Students log in with their faculty account, track their progress, see anonymous rankings by nickname and know exactly what every reward means for their final grade.
 
 > [!NOTE]
-> This is a team project for the *Software Engineering* course at Adam Mickiewicz University, Poznań. Goal for the current semester: **MVP**. The repository is under active development — the structure below shows the planned layout.
+> This is a team project for the *Software Engineering* course at Adam Mickiewicz University, Poznań. Goal for the current semester: **MVP**. The structure below shows the current layout; parts of milestone 2 (bonus shop, grading rules, export) are not built yet.
 
 ### Built With
 
@@ -34,7 +32,7 @@
 **Technology stack:**
 - **Core service** (identity & groups): C#, .NET 10, ASP.NET Core, Entity Framework Core, LDAP authentication (faculty LABS domain), JWT.
 - **Game service** (gamification logic): Python, Django, Django REST Framework, Django ORM, uv.
-- **Frontend:** React + TypeScript + Vite — separate views for students, teachers and administrators.
+- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS 4 in the **Blask** design (light and dark theme): a landing page with the login, then separate views for students, teachers and administrators. In development it runs on MSW mocks, no backend needed.
 - **Database:** PostgreSQL, separate schema per service.
 - **Infrastructure:** Docker Compose, nginx reverse proxy, OpenLDAP test directory, GitHub Actions CI/CD.
 - **Communication:** HTTP/REST (JSON), contracts described with OpenAPI.
@@ -53,9 +51,10 @@
     <details open>
       <summary>🟦 <kbd>📁 services/core</kbd> ── <i>Identity & Groups (ASP.NET Core) 🔐</i></summary>
       <blockquote>
-        🔑 <code>Auth/</code> ── LDAP login, JWT issuing, roles<br>
-        📥 <code>Users/</code> ── CSV account import, profiles (nickname, avatar)<br>
-        👥 <code>Groups/</code> ── class groups and student membership<br>
+        🔑 <code>Features/Auth/</code> ── LDAP login, JWT and refresh tokens, roles<br>
+        📥 <code>Features/Users/</code> ── CSV account import, student profile (nickname, avatar)<br>
+        👥 <code>Features/Groups/</code> ── class groups, membership, a student's groups, group roster by nickname<br>
+        🔎 <code>Features/Students/</code> ── student search for teachers<br>
         🧪 <code>tests/</code> ── xUnit tests<br>
         🐳 <code>Dockerfile</code> ── service container
       </blockquote>
@@ -63,22 +62,23 @@
     <details open>
       <summary>🟩 <kbd>📁 services/game</kbd> ── <i>Gamification Engine (Django REST) 🎲</i></summary>
       <blockquote>
-        ⚙️ <code>config/</code> ── story, currencies, ranks, badges, activities<br>
-        📜 <code>grading/</code> ── link between rewards and grading rules<br>
-        💎 <code>rewards/</code> ── awarding currency and badges, balances, history<br>
-        🏆 <code>rankings/</code> ── anonymous rankings by nickname<br>
-        🛒 <code>shop/</code> ── bonus shop, discounts by rank or badge<br>
-        📤 <code>export/</code> ── CSV export<br>
+        ⚙️ <code>config/</code> ── Django settings, JWT validation<br>
+        🔗 <code>common/</code> ── routes, permissions, Core client (membership and roster)<br>
+        💎 <code>gamification/</code> ── currency and ranks, awarding points and badges, history, student state, rankings by nickname<br>
+        🧪 <code>tests/</code> ── pytest<br>
         🔥 <b><kbd>manage.py</kbd></b> ── <i>Django entry point</i>
       </blockquote>
     </details>
     <details open>
       <summary>🟨 <kbd>📁 frontend</kbd> ── <i>Web UI (React + Vite) 🖥️</i></summary>
       <blockquote>
-        🎓 <code>src/pages/student/</code> ── progress, rankings, shop, profile<br>
-        🧑‍🏫 <code>src/pages/teacher/</code> ── groups, configuration, awarding, export<br>
-        🛡️ <code>src/pages/admin/</code> ── account import and management<br>
-        🧩 <code>src/components/</code> ── shared UI components
+        🌌 <code>src/pages/landing/</code> ── start page with the login (sky, beam, night chapters)<br>
+        🎓 <code>src/pages/student/</code> ── my groups, my state (balance, rank, history, badges), ranking<br>
+        🧑‍🏫 <code>src/pages/teacher/</code> ── groups, students, awards, points and ranks<br>
+        🛡️ <code>src/pages/admin/</code> ── account import<br>
+        ✨ <code>src/styles/blask/</code>, <code>src/components/blask/</code> ── Blask design layer: tokens, themes, kit components<br>
+        🧭 <code>src/layout/</code> ── app shell for every role<br>
+        🎭 <code>src/mocks/</code> ── MSW mocks of every API endpoint
       </blockquote>
     </details>
     <details>
@@ -92,9 +92,10 @@
     <details>
       <summary>📚 <kbd>📁 docs</kbd> ── <i>Documentation 📖</i></summary>
       <blockquote>
-        🧭 <code>vision/</code> ── project vision document<br>
-        🏗️ <code>architecture.md</code> ── components, auth flow, data ownership<br>
-        🖼️ <code>assets/</code> ── banner and diagrams
+        🧭 <code>vision/</code> ── project vision and requirements<br>
+        📡 <code>api.md</code> ── Core and Game API reference<br>
+        🗺️ <code>diagram/</code> ── C4 context and container diagrams<br>
+        🖼️ <code>assets/</code> ── README images
       </blockquote>
     </details>
     <details open>
@@ -234,6 +235,8 @@ cd frontend
 npm ci
 npm run dev
 ```
+
+It opens on http://localhost:5173 with MSW mocks, so no backend is needed; the demo accounts above work with the password `haslo`. To use the real stack instead, run it with `VITE_USE_MOCKS=false VITE_API_TARGET=http://localhost:8080 npm run dev`.
 </details>
 
 > [!TIP]
@@ -243,20 +246,21 @@ npm run dev
 
 # 🗺️ Roadmap
 
-- [ ] **Milestone 1 — System core** *(mid-semester)*
-  - [ ] LDAP login and roles · `SCRUM-7`
-  - [ ] CSV account import · `SCRUM-8`
-  - [ ] Class groups · `SCRUM-9`
-  - [ ] Student nickname and avatar · `SCRUM-10`
-  - [ ] Story currency · `SCRUM-11`
-  - [ ] Awarding currency · `SCRUM-12`
-  - [ ] Ranks with thresholds · `SCRUM-13`
-  - [ ] Badges · `SCRUM-14`
+- [x] **Milestone 1 — System core** *(mid-semester)*
+  - [x] LDAP login, roles and refresh tokens · `SCRUM-7`, `SCRUM-20`
+  - [x] CSV account import · `SCRUM-7`, `SCRUM-20`
+  - [x] Class groups and their students · `SCRUM-23`, `SCRUM-24`, `SCRUM-26`
+  - [x] Group currency and ranks with thresholds · `SCRUM-28`, `SCRUM-29`, `SCRUM-30`
+  - [x] Awarding points, with history · `SCRUM-32`, `SCRUM-34`
+  - [x] Badges: create, award, revoke · `SCRUM-33`, `SCRUM-34`
 - [ ] **Milestone 2 — MVP** *(end of semester)*
-  - [ ] Link between rewards and grading rules
-  - [ ] Rankings
-  - [ ] Bonus shop
-  - [ ] CSV export
+  - [x] Student profile: nickname · `SCRUM-36`
+  - [ ] Student avatar from a ready-made set · `SCRUM-36` (API ready, picker in the UI next)
+  - [x] Student state in a group and rankings by nickname · `SCRUM-37`, `SCRUM-38`
+  - [x] Blask design across the whole app · `SCRUM-39`
+  - [ ] Bonus shop · `SCRUM-12`
+  - [ ] Link between rewards and grading rules · `SCRUM-13`
+  - [ ] CSV export of results · `SCRUM-14`
   - [ ] Demo for the client and basic documentation
 
 ---
