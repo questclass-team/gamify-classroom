@@ -266,3 +266,91 @@ def test_revoking_preserves_history_and_allows_a_new_award(
     assert [
         item["id"] for item in api_client.get(list_url, **teacher_headers).json()
     ] == [result.json()["id"]]
+
+
+def group_badges_url(group_id=GROUP_ID):
+    return reverse("game:group-badge-create", kwargs={"group_id": group_id})
+
+
+def test_teacher_lists_group_badges_oldest_first(
+    api_client,
+    teacher_headers,
+    core_groups,
+):
+    newer = Badge.objects.create(group_id=GROUP_ID, name="Druga", icon="star")
+    older = Badge.objects.create(group_id=GROUP_ID, name="Pierwsza")
+    Badge.objects.filter(pk=older.pk).update(
+        created_at=newer.created_at - timezone.timedelta(minutes=1)
+    )
+    same_time = Badge.objects.create(group_id=GROUP_ID, name="Trzecia")
+    Badge.objects.filter(pk=same_time.pk).update(created_at=newer.created_at)
+    Badge.objects.create(group_id=OTHER_GROUP_ID, name="Obca")
+
+    response = api_client.get(group_badges_url(), **teacher_headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [item["id"] for item in body] == [older.pk, newer.pk, same_time.pk]
+    assert body[1] == {
+        "id": newer.pk,
+        "groupId": str(GROUP_ID),
+        "name": "Druga",
+        "description": "",
+        "icon": "star",
+        "createdAt": body[1]["createdAt"],
+    }
+    assert parse_datetime(body[1]["createdAt"]) == newer.created_at
+
+
+def test_listing_group_badges_returns_empty_list(
+    api_client,
+    teacher_headers,
+    core_groups,
+):
+    response = api_client.get(group_badges_url(), **teacher_headers)
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_listing_badges_of_a_foreign_group_returns_not_found(
+    api_client,
+    teacher_headers,
+    core_groups,
+):
+    foreign_group_id = UUID("66666666-6666-4666-8666-666666666666")
+    Badge.objects.create(group_id=foreign_group_id, name="Cudza")
+
+    response = api_client.get(group_badges_url(foreign_group_id), **teacher_headers)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.parametrize("role", ["student", "admin"])
+def test_listing_group_badges_requires_a_teacher(
+    api_client,
+    token_factory,
+    core_groups,
+    badge,
+    role,
+):
+    response = api_client.get(
+        group_badges_url(), **auth_header(token_factory(role=role))
+    )
+
+    assert response.status_code == 403
+
+
+def test_listing_group_badges_when_core_is_down_returns_service_unavailable(
+    api_client,
+    teacher_headers,
+    monkeypatch,
+):
+    def get(url, *, headers, timeout):
+        raise httpx.ConnectError("Core is down")
+
+    monkeypatch.setattr("common.core_client.httpx.get", get)
+
+    response = api_client.get(group_badges_url(), **teacher_headers)
+
+    assert response.status_code == 503

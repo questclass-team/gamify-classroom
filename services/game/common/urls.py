@@ -1,8 +1,8 @@
 from django.urls import path
 
 from gamification.views import (
-    BadgeCreateView,
     BadgeDetailView,
+    BadgeListCreateView,
     CurrencyIconView,
     GroupGameConfigView,
     StudentBadgeAwardDetailView,
@@ -40,7 +40,7 @@ urlpatterns = [
     ),
     path(
         "groups/<uuid:group_id>/badges",
-        BadgeCreateView.as_view(),
+        BadgeListCreateView.as_view(),
         name="group-badge-create",
     ),
     path(

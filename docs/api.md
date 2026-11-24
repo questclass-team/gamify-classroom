@@ -286,6 +286,11 @@ Returns `201 Created` with the saved badge:
 }
 ```
 
+#### `GET /api/game/groups/{groupId}/badges`
+
+Returns `200` with every badge in the group, oldest first (by `createdAt`, then `id`). Each item has the same shape
+as the create response above. Returns `[]` when the group has no badges.
+
 #### `PATCH /api/game/groups/{groupId}/badges/{badgeId}`
 
 Updates only the supplied `name`, `description`, or `icon`. Send an empty `description` to clear it. Returns `200`

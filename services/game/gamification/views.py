@@ -38,6 +38,7 @@ from .services import (
     get_group_game_config,
     get_reward_history,
     get_student_progress,
+    list_group_badges,
     list_student_badges,
     revoke_badge,
     update_badge,
@@ -248,9 +249,18 @@ class StudentRewardsView(APIView):
         )
 
 
-class BadgeCreateView(APIView):
+class BadgeListCreateView(APIView):
     permission_classes = (IsAuthenticated, IsTeacher)
     parser_classes = (JSONParser,)
+
+    @extend_schema(
+        responses={200: BadgeSerializer(many=True)},
+        summary="List badges in a group",
+    )
+    def get(self, request: Request, group_id: UUID) -> Response:
+        ensure_group_access(request=request, group_id=group_id)
+        badges = list_group_badges(group_id=group_id)
+        return Response(BadgeSerializer(badges, many=True).data)
 
     @extend_schema(
         request=CreateBadgeSerializer,
