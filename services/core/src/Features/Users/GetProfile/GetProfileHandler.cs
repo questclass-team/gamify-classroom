@@ -33,7 +33,7 @@ namespace QuestClass.Core.Features.Users.GetProfile
                 return Result<ProfileResponse>.Failure(ProfileErrors.StudentOnly());
             }
 
-            return Result<ProfileResponse>.Success(new ProfileResponse(student.Nickname));
+            return Result<ProfileResponse>.Success(student.ToProfileResponse());
         }
     }
 }

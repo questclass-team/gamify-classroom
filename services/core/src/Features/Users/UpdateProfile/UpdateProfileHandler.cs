@@ -40,7 +40,7 @@ namespace QuestClass.Core.Features.Users.UpdateProfile
             // Saving the same nickname again changes nothing; a change of letter case of one's own nickname is saved.
             if (string.Equals(student.Nickname, nickname, StringComparison.Ordinal))
             {
-                return Result<ProfileResponse>.Success(new ProfileResponse(student.Nickname));
+                return Result<ProfileResponse>.Success(student.ToProfileResponse());
             }
 
             if (!await _userRepository.TrySetNicknameAsync(student, nickname, cancellationToken))
@@ -52,7 +52,7 @@ namespace QuestClass.Core.Features.Users.UpdateProfile
 
             _logger.LogInformation("Nickname set. UserId: {UserId}", student.Id);
 
-            return Result<ProfileResponse>.Success(new ProfileResponse(student.Nickname));
+            return Result<ProfileResponse>.Success(student.ToProfileResponse());
         }
     }
 }

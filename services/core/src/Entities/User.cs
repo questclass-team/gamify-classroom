@@ -37,6 +37,12 @@ namespace QuestClass.Core.Entities
             set => _nickname = value is null ? null : NormalizeNickname(value);
         }
 
+        /// <summary>
+        /// Key of the student's avatar from <see cref="Avatars.Keys"/> (FR-21), or null for none. Shown next to the
+        /// nickname, so it is never a picture of the person.
+        /// </summary>
+        public string? Avatar { get; set; }
+
         public required string FirstName { get; set; }
 
         public required string LastName { get; set; }

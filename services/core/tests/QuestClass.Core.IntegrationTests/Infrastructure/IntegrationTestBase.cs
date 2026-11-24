@@ -51,7 +51,8 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
             Role role = Role.Student,
             string firstName = "Imported",
             string lastName = "Name",
-            string? nickname = null)
+            string? nickname = null,
+            string? avatar = null)
         {
             var user = new User
             {
@@ -59,6 +60,7 @@ namespace QuestClass.Core.IntegrationTests.Infrastructure
                 FirstName = firstName,
                 LastName = lastName,
                 Nickname = nickname,
+                Avatar = avatar,
                 Role = role,
                 CreatedAt = DateTimeOffset.UtcNow
             };

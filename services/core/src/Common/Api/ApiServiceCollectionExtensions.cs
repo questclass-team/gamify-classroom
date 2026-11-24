@@ -49,7 +49,7 @@ namespace QuestClass.Core.Common.Api
                     Title = "QuestClass Core API",
                     Version = "v1",
                     Description = "Identity and groups: LDAP login, JWT, roles, CSV account import, class groups, " +
-                        "student profiles (nickname)."
+                        "student profiles (nickname, avatar)."
                 });
 
                 var xmlDocumentPath = Path.Combine(

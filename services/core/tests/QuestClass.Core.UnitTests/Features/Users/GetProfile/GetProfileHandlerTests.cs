@@ -2,6 +2,7 @@ using NSubstitute;
 using QuestClass.Core.Common.Results;
 using QuestClass.Core.Entities;
 using QuestClass.Core.Features.Users.GetProfile;
+using QuestClass.Core.Features.Users.Shared;
 using QuestClass.Core.Repositories;
 using Shouldly;
 
@@ -27,6 +28,17 @@ namespace QuestClass.Core.UnitTests.Features.Users.GetProfile
             var result = await _handler.HandleAsync(student.Id);
 
             result.Value.Nickname.ShouldBe(nickname);
+        }
+
+        [Fact]
+        public async Task HandleAsync_ShouldReturnTheAvatarToo()
+        {
+            var student = AddUser(Role.Student, "Cichy Lis");
+            student.Avatar = "fox";
+
+            var result = await _handler.HandleAsync(student.Id);
+
+            result.Value.ShouldBe(new ProfileResponse("Cichy Lis", "fox"));
         }
 
         [Fact]
