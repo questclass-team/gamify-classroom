@@ -189,6 +189,10 @@ def create_badge(
     )
 
 
+def list_group_badges(*, group_id: UUID) -> QuerySet[Badge]:
+    return Badge.objects.filter(group_id=str(group_id)).order_by("created_at", "id")
+
+
 def get_badge(*, group_id: UUID, badge_id: int) -> Badge:
     try:
         return Badge.objects.get(pk=badge_id, group_id=str(group_id))
