@@ -7,6 +7,7 @@
  *            toast, tabs, breadcrumbs, tables, empty states (components/blask render them)
  *   shell    the app shell: content frame, header, header links, account, theme switch
  *   parts    game parts shared by students and teachers: rank stars and line, history line
+ *   avatars  the student avatar picker (the discs are inline SVG, components/blask/Avatar.tsx)
  *   landing, student, teacher   page-specific styles, one file per area
  * React components that render the kit live in src/components/blask, the shell in src/layout.
  */
@@ -15,6 +16,7 @@
 @import './blask/kit.css';
 @import './blask/shell.css';
 @import './blask/parts.css';
+@import './blask/avatars.css';
 @import './blask/landing.css';
 @import './blask/student.css';
 @import './blask/teacher.css';

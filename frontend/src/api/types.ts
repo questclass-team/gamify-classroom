@@ -138,11 +138,38 @@ export const NICKNAME_MIN_LENGTH = 3
 export const NICKNAME_MAX_LENGTH = 24
 
 /**
- * GET /api/core/me/profile -> StudentProfile; the nickname is null until the student sets one.
- * Rankings show only nicknames and never fall back to a name or login.
+ * The ready-made avatars (Core `Avatars.Keys`), in Core's order, which is also the picker's. Core
+ * stores and checks only the key; the frontend draws one picture per key (components/blask/art.ts).
+ */
+export const AVATAR_KEYS = [
+  'fox',
+  'owl',
+  'hedgehog',
+  'cat',
+  'wolf',
+  'raven',
+  'dragon',
+  'phoenix',
+  'comet',
+  'star',
+  'moon',
+  'planet',
+  'spark',
+  'aurora',
+  'wave',
+  'galaxy',
+] as const
+
+export type AvatarKey = (typeof AVATAR_KEYS)[number]
+
+/**
+ * GET /api/core/me/profile -> StudentProfile; the nickname and the avatar are null until the
+ * student sets them. Rankings show only nicknames and avatars and never fall back to a name or
+ * login.
  */
 export interface StudentProfile {
   nickname: string | null
+  avatar: AvatarKey | null
 }
 
 /**
@@ -154,6 +181,25 @@ export interface StudentProfile {
  */
 export interface UpdateProfileRequest {
   nickname: string
+}
+
+/**
+ * PUT /api/core/me/avatar -> 200 StudentProfile; `null` removes the avatar. Saved independently
+ * of the nickname. 400 problem details with `errors.Avatar` for a key outside AVATAR_KEYS.
+ */
+export interface UpdateAvatarRequest {
+  avatar: AvatarKey | null
+}
+
+/**
+ * Item of GET /api/core/groups/{groupId}/roster (the group's teacher or a student in it): current
+ * members by nickname in Polish alphabetical order, students without one last; no names or logins.
+ * The game service reads it for rankings; 404 `Groups.NotFound` for a group outside the caller's.
+ */
+export interface RosterEntry {
+  studentId: string
+  nickname: string | null
+  avatar: AvatarKey | null
 }
 
 /**
@@ -324,6 +370,8 @@ export interface StudentGroupState {
   groupId: string
   /** The caller's nickname from Core, null until set. */
   nickname: string | null
+  /** The caller's avatar from Core, null when none is chosen. */
+  avatar: AvatarKey | null
   currencyName: string
   currencyIconUrl: string | null
   /** 0 when never awarded. */
@@ -346,6 +394,8 @@ export interface RankingEntry {
   /** Standard competition ranking on the primary criterion (1, 1, 3). */
   position: number
   nickname: string | null
+  /** Null when the student has not chosen one (shown as the neutral mark, never initials). */
+  avatar: AvatarKey | null
   balance: number
   rank: RankRef | null
   /** Active badge awards in this group. */

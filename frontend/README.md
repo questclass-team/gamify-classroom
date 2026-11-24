@@ -52,18 +52,21 @@ Production builds never include the mocks.
   fonts, the dark remap under `<html data-theme='dark'>`, the `dark:` variant; Tailwind's default
   palette is off), `base.css` (document, focus, selection), `kit.css` (type, panels, buttons,
   fields, chips, notices, toast, dialog, menu, tabs, breadcrumbs, tables, empty states),
-  `shell.css` (header, theme switch), `parts.css` (rank stars and line, history line) and one file
-  per area (`landing.css`, `student.css`, `teacher.css`); every class is prefixed `blask-`.
+  `shell.css` (header, theme switch), `parts.css` (rank stars and line, history line),
+  `avatars.css` (the avatar picker) and one file per area (`landing.css`, `student.css`,
+  `teacher.css`); every class is prefixed `blask-`.
 - Themes: `src/lib/theme.ts` stores the choice in `localStorage` (`qc:theme`, else the system
   setting) and keeps `data-theme` and `theme-color` in sync; `index.html` applies it before the
   first paint.
 - Kit: `src/components/blask/` – `Button`/`LinkButton`, `TextField`/`TextArea`/`SelectField`/
   `Checkbox`, `Panel`, `PageHeader`, `Breadcrumbs`/`RouteTabs`, `Table`, `Dialog`/
   `BlaskConfirmDialog`, `EmptyState`/`LoadingState`, `BlaskNotice`, `ThemeSwitch`, `GroupCover`
-  and the game marks (`Wordmark`, `Amount`, `BadgeMark`, `RankStar`, `RankProgress`, icons).
+  and the game marks (`Wordmark`, `Amount`, `BadgeMark`, `RankStar`, `RankProgress`, icons), plus
+  the student avatars: `Avatar` (the sixteen keys of Core and the neutral mark for none, drawn from
+  `art.ts`), `AvatarPicker` (a radio grid) and `avatars.ts` (Polish names, key check).
 - Shell: `src/layout/AppShell.tsx` – the one shell of every signed-in page: wordmark, the role's
   links (admin Import kont, teacher and student Moje grupy), theme switch, account menu (students:
-  nickname with the nickname dialog), Wyloguj, skip link and `<main>`; pages render only their
+  avatar and nickname with their dialogs), Wyloguj, skip link and `<main>`; pages render only their
   content. `useShell()` shows a toast, `<ShellAside>` / `<ShellSubnav>` put page controls in the
   header. `src/layout/RootLayout.tsx` mounts smooth scrolling (Lenis + GSAP, `src/lib/`, a lazy
   chunk) per page.

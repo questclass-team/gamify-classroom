@@ -3,6 +3,8 @@ import { ApiError } from '../../api/client'
 import { fetchMyGroupState } from '../../api/student'
 import type { MyGroup, StudentGroupState } from '../../api/types'
 import { useApiData } from '../../api/useApiData'
+import { Avatar } from '../../components/blask/Avatar'
+import { avatarLabel } from '../../components/blask/avatars'
 import { BadgeMark } from '../../components/blask/BadgeMark'
 import { Button } from '../../components/blask/Button'
 import { Amount, CurrencyMark, type Currency } from '../../components/blask/CurrencyMark'
@@ -86,11 +88,12 @@ export function MyStatePage() {
 }
 
 function MyState({ group, data }: { group: MyGroup; data: StudentGroupState }) {
-  const { nickname, openNicknameDialog } = useStudentProfile()
+  const { nickname, avatar, openNicknameDialog, openAvatarDialog } = useStudentProfile()
   const currency: Currency = { name: data.currencyName, iconUrl: data.currencyIconUrl }
   const shown = useCountUp(data.balance, 1600)
   // The header's profile follows saves at once; the state was read before them.
   const myNickname = nickname === undefined ? data.nickname : nickname
+  const myAvatar = avatar === undefined ? data.avatar : avatar
   const balanceLabel = `Saldo: ${data.balance.toLocaleString('pl-PL')} (${currency.name})`
   const [now] = useState(() => Date.now())
   const gain = weekGain(data.rewards, now)
@@ -241,22 +244,36 @@ function MyState({ group, data }: { group: MyGroup; data: StudentGroupState }) {
             ) : (
               'W tym tygodniu bez nowych nagród. '
             )}
-            {myNickname === null ? (
-              <>W rankingu widać Cię jako „{NO_NICKNAME}”.</>
-            ) : (
-              <>
-                W rankingu występujesz jako{' '}
-                <strong className="font-semibold text-blask-ink">{myNickname}</strong>.
-              </>
-            )}
+            <span className="whitespace-nowrap">
+              {myNickname === null ? 'W rankingu widać Cię jako' : 'W rankingu występujesz jako'}
+            </span>{' '}
+            <span className="inline-flex max-w-full items-center gap-1.5 align-middle">
+              <Avatar avatar={myAvatar} size={28} label={`Awatar: ${avatarLabel(myAvatar)}`} />
+              {myNickname === null ? (
+                <span>„{NO_NICKNAME}”.</span>
+              ) : (
+                <span className="min-w-0 break-words">
+                  <strong className="font-semibold text-blask-ink">{myNickname}</strong>.
+                </span>
+              )}
+            </span>
           </p>
-          <Button
-            variant="quiet"
-            size="sm"
-            onClick={(event) => openNicknameDialog(event.currentTarget)}
-          >
-            {myNickname === null ? 'Ustaw nick' : 'Zmień nick'}
-          </Button>
+          <div className="flex flex-wrap gap-1">
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={(event) => openNicknameDialog(event.currentTarget)}
+            >
+              {myNickname === null ? 'Ustaw nick' : 'Zmień nick'}
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={(event) => openAvatarDialog(event.currentTarget)}
+            >
+              {myAvatar === null ? 'Wybierz awatar' : 'Zmień awatar'}
+            </Button>
+          </div>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { fetchGroupRanking } from '../../api/student'
 import { RANKING_BY, type GroupRanking, type RankingBy, type RankingEntry } from '../../api/types'
 import { useApiData } from '../../api/useApiData'
+import { Avatar } from '../../components/blask/Avatar'
 import { BlaskNotice } from '../../components/blask/BlaskNotice'
 import { Button } from '../../components/blask/Button'
 import { Amount, type Currency } from '../../components/blask/CurrencyMark'
@@ -30,12 +31,12 @@ const PODIUM_STAR = { 1: 3, 2: 2, 3: 1 } as const
 
 /**
  * `/student/groups/:groupId/ranking?by=points|badges`: the lab's Tablica: everyone in the group by
- * nickname only, the first three on a podium of light and the others in a list below, ordered by
- * points or badges (the order lives in the URL). Equal results share a place.
+ * nickname and avatar only, the first three on a podium of light and the others in a list below,
+ * ordered by points or badges (the order lives in the URL). Equal results share a place.
  */
 export function RankingPage() {
   const { group } = useStudentGroup()
-  const { nickname, openNicknameDialog } = useStudentProfile()
+  const { nickname, avatar, openNicknameDialog } = useStudentProfile()
   const [params, setParams] = useSearchParams()
   const by = parseRankingBy(params.get('by'))
   const load = useCallback(
@@ -44,14 +45,16 @@ export function RankingPage() {
   )
   const { state, reload } = useApiData(load)
 
-  // A saved nickname changes the student's row (and maybe the order among equals): load again.
-  const seenNickname = useRef(nickname)
+  // A saved nickname or avatar changes the student's row (a nickname maybe the order among
+  // equals): load again.
+  const seenProfile = useRef({ nickname, avatar })
   useEffect(() => {
-    if (seenNickname.current === nickname) return
-    const known = seenNickname.current !== undefined
-    seenNickname.current = nickname
+    const seen = seenProfile.current
+    if (seen.nickname === nickname && seen.avatar === avatar) return
+    const known = seen.nickname !== undefined || seen.avatar !== undefined
+    seenProfile.current = { nickname, avatar }
     if (known) reload()
-  }, [nickname, reload])
+  }, [nickname, avatar, reload])
 
   const ranking = state.status === 'ready' ? state.data : null
   // While another order loads, the previous list stays, dimmed and marked busy.
@@ -265,6 +268,7 @@ function PodiumPlace({
     >
       <span className="sr-only">{placeText(entry.position, tied)}: </span>
       <RankStar level={PODIUM_STAR[step]} size={step === 1 ? 56 : 44} twinkle={step === 1} />
+      <Avatar avatar={entry.avatar} size={step === 1 ? 64 : 48} />
       <p className="w-full min-w-0 px-1 text-[0.9375rem] leading-snug font-semibold break-words sm:text-base">
         <Nickname entry={entry} />
       </p>
@@ -315,8 +319,11 @@ function RankingRow({
         <span aria-hidden="true">{entry.position}</span>
         <span className="sr-only">{placeText(entry.position, tied)}</span>
       </span>
-      <span className="min-w-0 truncate">
-        <Nickname entry={entry} />
+      <span className="flex min-w-0 items-center gap-2.5">
+        <Avatar avatar={entry.avatar} size={32} />
+        <span className="min-w-0 truncate">
+          <Nickname entry={entry} />
+        </span>
       </span>
       <span className="text-sm text-blask-graphite @max-[44rem]:col-start-2 @max-[44rem]:row-start-2 @min-[44rem]:text-[0.9375rem] @min-[44rem]:text-blask-ink">
         <span className="sr-only">Ranga: </span>

@@ -9,13 +9,16 @@ import {
 } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
 import { fetchMyProfile } from '../api/student'
-import type { CurrentUser, Role } from '../api/types'
+import type { AvatarKey, CurrentUser, Role } from '../api/types'
 import { useApiData } from '../api/useApiData'
 import { useAuth } from '../auth/authContext'
 import { ROLE_HOME, ROLE_LABEL } from '../auth/roles'
-import { CheckIcon, CloseIcon, LogOutIcon, PenIcon } from '../components/blask/icons'
+import { avatarLabel } from '../components/blask/avatars'
+import { CheckIcon, CloseIcon, LogOutIcon, PenIcon, UserIcon } from '../components/blask/icons'
 import { ThemeSwitch } from '../components/blask/ThemeSwitch'
 import { Wordmark } from '../components/blask/Wordmark'
+import { avatarSavedText } from '../pages/student/avatar'
+import { AvatarDialog } from '../pages/student/AvatarDialog'
 import { NicknameDialog } from '../pages/student/NicknameDialog'
 import { NO_NICKNAME } from '../pages/student/ranking'
 import { AccountMenu } from './AccountMenu'
@@ -37,7 +40,7 @@ const MAIN_ID = 'main'
  * link, the sticky header (wordmark, the role's links with the glint under the current one, the
  * theme switch, the page's aside, the account menu, Wyloguj; on phones the links get their own
  * row) and `<main>` with the page in the content frame. Students also get their profile
- * (nickname) and the nickname dialog, shared with the pages through useStudentProfile().
+ * (nickname, avatar) and its two dialogs, shared with the pages through useStudentProfile().
  */
 export function AppShell() {
   const { state } = useAuth()
@@ -57,17 +60,26 @@ export function AppShell() {
   )
 }
 
-function AccountSummary({ user, detail }: { user: CurrentUser; detail: ReactNode }) {
+function AccountSummary({
+  user,
+  detail,
+  children,
+}: {
+  user: CurrentUser
+  detail: ReactNode
+  children?: ReactNode
+}) {
   return (
     <div className="px-3 pt-2 pb-3 text-sm">
       <p className="font-semibold">{user.displayName}</p>
       <p className="text-blask-graphite">{ROLE_LABEL[user.role]}</p>
       <p className="mt-1.5 text-blask-graphite">{detail}</p>
+      {children}
     </div>
   )
 }
 
-/** The frame itself: header, main, toasts. `children` are extras (the nickname dialog). */
+/** The frame itself: header, main, toasts. `children` are extras (the student's dialogs). */
 function ShellFrame({
   user,
   account,
@@ -198,28 +210,42 @@ function ShellFrame({
   )
 }
 
-/** The student's shell: the profile (nickname), the account menu with it and the dialog. */
+type ProfileDialog = 'nickname' | 'avatar'
+
+/** The student's shell: the profile (nickname, avatar), the account menu with it and the dialogs. */
 function StudentShell({ user }: { user: CurrentUser }) {
   const { state: profile } = useApiData(fetchMyProfile)
   const [savedNickname, setSavedNickname] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<{ open: boolean; key: number }>({ open: false, key: 0 })
+  // Wrapped, because null (removed) is a saved value too.
+  const [savedAvatar, setSavedAvatar] = useState<{ avatar: AvatarKey | null } | null>(null)
+  const [dialog, setDialog] = useState<{ open: ProfileDialog | null; key: number }>({
+    open: null,
+    key: 0,
+  })
   const returnFocus = useRef<HTMLElement | null>(null)
   const accountButton = useRef<HTMLButtonElement>(null)
 
-  const nickname = savedNickname ?? (profile.status === 'ready' ? profile.data.nickname : undefined)
+  const loaded = profile.status === 'ready' ? profile.data : undefined
+  const nickname = savedNickname ?? loaded?.nickname
+  const avatar = savedAvatar !== null ? savedAvatar.avatar : loaded?.avatar
 
-  const openNicknameDialog = useCallback((returnTo?: HTMLElement | null) => {
+  const openDialog = useCallback((kind: ProfileDialog, returnTo?: HTMLElement | null) => {
     returnFocus.current = returnTo ?? null
-    setDialog((current) => ({ open: true, key: current.key + 1 }))
+    setDialog((current) => ({ open: kind, key: current.key + 1 }))
   }, [])
 
   const value = useMemo<StudentProfileValue>(
-    () => ({ nickname, openNicknameDialog }),
-    [nickname, openNicknameDialog],
+    () => ({
+      nickname,
+      avatar,
+      openNicknameDialog: (returnTo) => openDialog('nickname', returnTo),
+      openAvatarDialog: (returnTo) => openDialog('avatar', returnTo),
+    }),
+    [nickname, avatar, openDialog],
   )
 
   function closeDialog() {
-    setDialog((current) => ({ ...current, open: false }))
+    setDialog((current) => ({ ...current, open: null }))
     // The opener may be gone (a menu item, the ranking prompt): fall back to the account button.
     requestAnimationFrame(() => {
       const target = returnFocus.current
@@ -233,7 +259,11 @@ function StudentShell({ user }: { user: CurrentUser }) {
       <ShellFrame
         user={user}
         account={
-          <AccountMenu buttonRef={accountButton} label={nickname ?? user.displayName}>
+          <AccountMenu
+            buttonRef={accountButton}
+            label={nickname ?? user.displayName}
+            avatar={avatar ?? null}
+          >
             {(close) => (
               <>
                 <AccountSummary
@@ -247,18 +277,37 @@ function StudentShell({ user }: { user: CurrentUser }) {
                         ? `Nie masz jeszcze nicku. W rankingach widać Cię jako „${NO_NICKNAME}”.`
                         : `Nick w rankingach: ${nickname}`
                   }
-                />
+                >
+                  {avatar !== undefined && (
+                    <p className="text-blask-graphite">
+                      {avatar === null
+                        ? 'Nie masz jeszcze awatara.'
+                        : `Awatar: ${avatarLabel(avatar)}`}
+                    </p>
+                  )}
+                </AccountSummary>
                 <div className="border-t border-(--blask-divider) pt-1.5">
                   <button
                     type="button"
                     className="blask-menu-item"
                     onClick={() => {
                       close()
-                      openNicknameDialog(accountButton.current)
+                      openDialog('nickname', accountButton.current)
                     }}
                   >
                     <PenIcon className="size-4 text-blask-graphite" />
                     {nickname ? 'Zmień nick' : 'Ustaw nick'}
+                  </button>
+                  <button
+                    type="button"
+                    className="blask-menu-item"
+                    onClick={() => {
+                      close()
+                      openDialog('avatar', accountButton.current)
+                    }}
+                  >
+                    <UserIcon className="size-4 text-blask-graphite" />
+                    {avatar ? 'Zmień awatar' : 'Wybierz awatar'}
                   </button>
                 </div>
               </>
@@ -266,11 +315,13 @@ function StudentShell({ user }: { user: CurrentUser }) {
           </AccountMenu>
         }
       >
-        <StudentNicknameDialog
+        <StudentProfileDialogs
           dialogKey={dialog.key}
           open={dialog.open}
           nickname={nickname ?? null}
-          onSaved={setSavedNickname}
+          avatar={avatar ?? null}
+          onNicknameSaved={setSavedNickname}
+          onAvatarSaved={(saved) => setSavedAvatar({ avatar: saved })}
           onClose={closeDialog}
         />
       </ShellFrame>
@@ -278,31 +329,47 @@ function StudentShell({ user }: { user: CurrentUser }) {
   )
 }
 
-/** The nickname dialog inside the frame, so a saved nickname is confirmed by the shell's toast. */
-function StudentNicknameDialog({
+/** The profile dialogs inside the frame, so a save is confirmed by the shell's toast. */
+function StudentProfileDialogs({
   dialogKey,
   open,
   nickname,
-  onSaved,
+  avatar,
+  onNicknameSaved,
+  onAvatarSaved,
   onClose,
 }: {
   dialogKey: number
-  open: boolean
+  open: ProfileDialog | null
   nickname: string | null
-  onSaved: (nickname: string) => void
+  avatar: AvatarKey | null
+  onNicknameSaved: (nickname: string) => void
+  onAvatarSaved: (avatar: AvatarKey | null) => void
   onClose: () => void
 }) {
   const { notify } = useShell()
   return (
-    <NicknameDialog
-      key={dialogKey}
-      open={open}
-      current={nickname}
-      onSaved={(saved) => {
-        onSaved(saved)
-        notify(`Zapisano nick „${saved}”. Pod nim widzą Cię inni w rankingach.`)
-      }}
-      onClose={onClose}
-    />
+    <>
+      <NicknameDialog
+        key={`nickname-${dialogKey}`}
+        open={open === 'nickname'}
+        current={nickname}
+        onSaved={(saved) => {
+          onNicknameSaved(saved)
+          notify(`Zapisano nick „${saved}”. Pod nim widzą Cię inni w rankingach.`)
+        }}
+        onClose={onClose}
+      />
+      <AvatarDialog
+        key={`avatar-${dialogKey}`}
+        open={open === 'avatar'}
+        current={avatar}
+        onSaved={(saved) => {
+          onAvatarSaved(saved)
+          notify(avatarSavedText(saved))
+        }}
+        onClose={onClose}
+      />
+    </>
   )
 }
