@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { searchStudents } from '../../api/groups'
 import { STUDENT_SEARCH_MIN_LENGTH, type StudentSummary } from '../../api/types'
-import { Alert, Button, TextField } from '../../components/ui'
+import { BlaskNotice } from '../../components/blask/BlaskNotice'
+import { Button } from '../../components/blask/Button'
+import { TextField } from '../../components/blask/Field'
+import { CheckIcon, PlusIcon } from '../../components/blask/icons'
+import { plural } from '../../format'
 
 const SEARCH_DELAY_MS = 250
 
@@ -11,7 +15,7 @@ type SearchResult =
 
 interface StudentPickerProps {
   memberIds: ReadonlySet<string>
-  /** Id of the student being added right now; all add buttons are disabled meanwhile. */
+  /** Id of the student being added right now; all add buttons wait meanwhile. */
   addingId: string | null
   onAdd: (student: StudentSummary) => void
 }
@@ -19,6 +23,8 @@ interface StudentPickerProps {
 /** Search among imported students; members are listed but cannot be added twice. */
 export function StudentPicker({ memberIds, addingId, onAdd }: StudentPickerProps) {
   const [query, setQuery] = useState('')
+  // The add button turns into "W grupie": keep the keyboard focus on that row.
+  const [focusId, setFocusId] = useState<string | null>(null)
   const [result, setResult] = useState<SearchResult | null>(null)
   const trimmed = query.trim()
   const searchable = trimmed.length >= STUDENT_SEARCH_MIN_LENGTH
@@ -42,11 +48,11 @@ export function StudentPicker({ memberIds, addingId, onAdd }: StudentPickerProps
 
   // Results of an older query are never shown for the current one.
   const current = searchable && result?.query === trimmed ? result : null
+  const found = current?.status === 'ready' ? current.students : null
 
   return (
     <div role="search" className="flex flex-col gap-3">
       <TextField
-        id="student-search"
         label="Szukaj studenta"
         type="search"
         placeholder="Login albo imię i nazwisko"
@@ -55,61 +61,73 @@ export function StudentPicker({ memberIds, addingId, onAdd }: StudentPickerProps
         enterKeyHint="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && query !== '') {
+            event.preventDefault()
+            setQuery('')
+          }
+        }}
       />
 
-      <div aria-live="polite" className="text-sm text-muted">
+      <p aria-live="polite" className="text-sm text-blask-graphite">
         {!searchable && `Wpisz co najmniej ${STUDENT_SEARCH_MIN_LENGTH} znaki.`}
         {searchable && current === null && 'Szukam…'}
-        {current?.status === 'ready' &&
-          current.students.length > 0 &&
-          `Znaleziono: ${current.students.length}`}
-      </div>
+        {found !== null &&
+          found.length > 0 &&
+          `${found.length} ${plural(found.length, 'wynik', 'wyniki', 'wyników')}`}
+      </p>
 
       {current?.status === 'error' && (
-        <Alert tone="error">Nie udało się wyszukać studentów. Spróbuj ponownie.</Alert>
+        <BlaskNotice tone="error">Nie udało się wyszukać studentów. Spróbuj ponownie.</BlaskNotice>
       )}
 
-      {current?.status === 'ready' && current.students.length === 0 && (
-        <Alert tone="info">
-          Brak studentów pasujących do „{current.query}”. Konto musi być wcześniej zaimportowane
-          przez administratora.
-        </Alert>
+      {found !== null && found.length === 0 && (
+        <BlaskNotice tone="info">
+          Brak studentów pasujących do „{trimmed}”. Konto musi być wcześniej zaimportowane przez
+          administratora.
+        </BlaskNotice>
       )}
 
-      {current?.status === 'ready' && current.students.length > 0 && (
-        <ul className="divide-y divide-line border-y border-line">
-          {current.students.map((student) => (
-            <li key={student.id} className="flex items-center justify-between gap-3 py-2.5">
+      {found !== null && found.length > 0 && (
+        <ul className="-mx-5 border-t border-(--blask-divider) sm:-mx-6">
+          {found.map((student) => (
+            <li
+              key={student.id}
+              className="blask-row flex items-center justify-between gap-3 px-5 py-2.5 sm:px-6"
+            >
               <div className="min-w-0">
-                <p className="truncate font-medium">{student.displayName}</p>
-                <p className="truncate font-mono text-xs text-muted">{student.login}</p>
+                <p className="truncate font-medium text-blask-ink">{student.displayName}</p>
+                <p className="truncate font-mono text-xs text-blask-graphite">{student.login}</p>
               </div>
               {memberIds.has(student.id) ? (
-                <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-success">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="size-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m5 12.5 4.5 4.5L19 7" />
-                  </svg>
-                  W grupie
+                <span
+                  tabIndex={-1}
+                  ref={(node) => {
+                    if (node !== null && student.id === focusId) {
+                      node.focus()
+                      setFocusId(null)
+                    }
+                  }}
+                  className="blask-chip blask-chip-line min-h-7 shrink-0 gap-1 px-2.5 text-xs"
+                >
+                  <CheckIcon className="size-3.5" />W grupie
                 </span>
               ) : (
                 <Button
+                  variant="outline"
                   size="sm"
-                  variant="secondary"
                   className="shrink-0"
-                  disabled={addingId !== null}
+                  disabled={addingId !== null && addingId !== student.id}
+                  busy={addingId === student.id}
+                  busyLabel="Dodawanie…"
                   aria-label={`Dodaj ${student.displayName}`}
-                  onClick={() => onAdd(student)}
+                  onClick={() => {
+                    setFocusId(student.id)
+                    onAdd(student)
+                  }}
                 >
-                  {addingId === student.id ? 'Dodawanie…' : 'Dodaj'}
+                  <PlusIcon className="size-4" />
+                  Dodaj
                 </Button>
               )}
             </li>

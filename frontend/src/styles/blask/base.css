@@ -1,0 +1,128 @@
+/*
+ * Blask base: the document itself. The page tone (a step darker than the panels), Figtree for
+ * the UI, ink text, the cobalt focus ring and selection, both themes. Prefix-free element rules
+ * live here only.
+ */
+@import '@fontsource-variable/bricolage-grotesque/standard.css';
+@import '@fontsource-variable/figtree';
+
+@layer base {
+  html {
+    background: var(--blask-page);
+    color-scheme: light;
+    scrollbar-color: #afc0ff var(--blask-page);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html[data-theme='dark'] {
+    color-scheme: dark;
+    scrollbar-color: #1a2373 var(--blask-page);
+  }
+
+  /* Keyboard focus and in-page links never land under the sticky header (or a sticky save bar). */
+  html {
+    scroll-padding-top: calc(var(--blask-head-h) + 1rem);
+  }
+
+  html:has(.blask-save-bar) {
+    scroll-padding-bottom: 6.5rem;
+  }
+
+  body {
+    margin: 0;
+    background: var(--blask-page);
+    color: var(--color-blask-ink);
+    font-family: var(--font-blask-ui);
+    font-size: 1rem;
+    line-height: 1.55;
+    caret-color: var(--color-blask-cobalt);
+    accent-color: var(--color-blask-cobalt);
+    overflow-x: clip;
+  }
+
+  :is(h1, h2, h3, h4) {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: #afc0ff;
+    color: #0e1020;
+  }
+
+  [data-theme='dark'] ::selection {
+    background: #1a2373;
+    color: #fbfaff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--blask-focus);
+    outline-offset: 3px;
+  }
+
+  a {
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+  }
+
+  /* Without both rules, scrolling over the backdrop or inside a modal scrolls the page. */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+}
+
+@layer components {
+  .blask-num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The skip link: off screen until it gets the keyboard focus. */
+  .blask-skip {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 70;
+    translate: 0 -6rem;
+  }
+
+  .blask-skip:focus-visible {
+    translate: 0 0;
+  }
+
+  /* A theme change: a circle of the new mode grows from the switch (View Transitions), or,
+     without them, the colours cross-fade (components/blask/ThemeSwitch). */
+  html.blask-vt::view-transition-old(root),
+  html.blask-vt::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  html.blask-theme-fade,
+  html.blask-theme-fade *:not(.blask-switch, .blask-switch *) {
+    transition:
+      background-color 400ms ease,
+      color 400ms ease,
+      border-color 400ms ease,
+      fill 400ms ease,
+      stroke 400ms ease !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0ms !important;
+    }
+  }
+}

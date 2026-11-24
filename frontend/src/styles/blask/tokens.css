@@ -1,0 +1,91 @@
+/*
+ * Blask tokens: one palette, from paper to the deepest blue of the evening, never neutral black.
+ * Paper and ink, a cobalt → iris light with pearl highlights, lavender for light at rest,
+ * raspberry as the only warning colour; nothing yellow. Tailwind's default palette is off, so
+ * these are the only colours (`bg-blask-page`, `text-blask-graphite`, …).
+ *
+ * Dark mode: `<html data-theme='dark'>` (src/lib/theme.ts) remaps the same tokens to the evening,
+ * so every token utility and every `var(--color-blask-…)` follows without a dark variant. Where a
+ * component needs its own dark value, write `[data-theme='dark'] .x { … }` in CSS or `dark:` in
+ * Tailwind classes.
+ */
+@theme static {
+  --color-*: initial;
+
+  /* Surfaces: the app's page tone, paper (the landing's base, insets inside panels), panels. */
+  --color-blask-page: #eef1f7;
+  --color-blask-paper: #f6f7fb;
+  --color-blask-white: #ffffff;
+  --color-blask-mist: #eef0fe;
+  --color-blask-haze: #dde3ff;
+  --color-blask-peri-soft: #e8edff;
+  --color-blask-peri: #afc0ff;
+  --color-blask-line: #daddea;
+  /* The light: lavender at rest, cobalt when lit, iris in reflections, pearl at the core. */
+  --color-blask-lavender: #8e9bff;
+  --color-blask-cobalt: #2b3bff;
+  --color-blask-cobalt-deep: #1d29d6;
+  --color-blask-iris: #6c3bf4;
+  --color-blask-pearl: #fbfaff;
+  /* Text: ink for headings and body, graphite for secondary text (7.9:1 on white). */
+  --color-blask-ink: #0e1020;
+  --color-blask-graphite: #4a4f66;
+  /* The one warning colour, a raspberry next to iris (5.4:1 on white). */
+  --color-blask-raspberry: #c72a5c;
+  /* The evening: the ribbon's deepest blue. Not remapped in dark mode; moon is body text on it. */
+  --color-blask-night: #060a2b;
+  --color-blask-night-raised: #0c1240;
+  --color-blask-dusk: #1a2373;
+  --color-blask-moon: #c3c9f5;
+
+  --font-blask-display: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
+  --font-blask-ui: 'Figtree Variable', system-ui, sans-serif;
+  --font-sans: var(--font-blask-ui);
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* `dark:` follows the app's switch, not the system setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@layer base {
+  :root {
+    --blask-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Surfaces of the app screens (the lab's shell variables; lab CSS ports as is). */
+    --blask-page: var(--color-blask-page);
+    --blask-panel: #ffffff;
+    --blask-panel-border: #dde2ee;
+    --blask-divider: #e7eaf3;
+    --blask-row-hover: #f5f7fd;
+    --blask-shadow-panel: 0 1px 2px rgb(14 16 32 / 0.05), 0 8px 24px -14px rgb(14 16 32 / 0.16);
+    --blask-shadow-pop: 0 18px 40px -18px rgb(14 16 32 / 0.35);
+    --blask-focus: #2b3bff;
+    /* Set by the app shell: the sticky header's height, for what sticks under it. */
+    --blask-head-h: 4rem;
+  }
+
+  /* The evening: the lab's dark palette, for the whole document. */
+  :root[data-theme='dark'] {
+    --color-blask-page: #060a2b;
+    --color-blask-paper: #060a2b;
+    --color-blask-white: #0c1240;
+    --color-blask-mist: #141c55;
+    --color-blask-haze: #1f2a7a;
+    --color-blask-peri-soft: #151e5c;
+    --color-blask-peri: #3d4aa8;
+    --color-blask-line: #232c6e;
+    --color-blask-ink: #fbfaff;
+    --color-blask-graphite: #c3c9f5;
+    --color-blask-cobalt: #9aa6ff;
+    --color-blask-cobalt-deep: #b4bdff;
+    --color-blask-iris: #a48bff;
+    --color-blask-raspberry: #ff7aa2;
+
+    --blask-panel: #0e1442;
+    --blask-panel-border: rgb(142 155 255 / 0.16);
+    --blask-divider: rgb(142 155 255 / 0.1);
+    --blask-row-hover: rgb(142 155 255 / 0.06);
+    --blask-shadow-panel: 0 10px 30px -18px rgb(0 0 0 / 0.65);
+    --blask-shadow-pop: 0 18px 40px -16px rgb(2 4 24 / 0.85), 0 0 0 1px rgb(142 155 255 / 0.08);
+    --blask-focus: #8e9bff;
+  }
+}

@@ -28,11 +28,6 @@ export function placeText(position: number, tied: boolean): string {
   return `${position}. miejsce${tied ? ' ex aequo' : ''}`
 }
 
-/** The first three places get the podium mark; ties share it. */
-export function isPodium(position: number): boolean {
-  return position <= 3
-}
-
 export function badgeCountText(count: number): string {
   return `${count.toLocaleString('pl-PL')} ${plural(count, 'odznaka', 'odznaki', 'odznak')}`
 }

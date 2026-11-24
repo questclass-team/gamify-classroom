@@ -1,11 +1,15 @@
 import { useCallback } from 'react'
-import { Link, NavLink, Outlet, useParams } from 'react-router'
+import { Outlet, useParams } from 'react-router'
 import { ApiError } from '../../api/client'
 import { apiErrorMessage } from '../../api/errorMessage'
 import { fetchGroup } from '../../api/groups'
 import { useApiData } from '../../api/useApiData'
-import { Alert, ErrorWithRetry, PageHeader } from '../../components/ui'
-import { dateFormat } from '../../format'
+import { BlaskNotice } from '../../components/blask/BlaskNotice'
+import { Button, LinkButton } from '../../components/blask/Button'
+import { Breadcrumbs, RouteTabs } from '../../components/blask/Navigation'
+import { PageHeader } from '../../components/blask/PageHeader'
+import { EmptyState, LoadingState, Skeleton } from '../../components/blask/States'
+import { dateFormat, plural } from '../../format'
 import type { GroupOutletContext } from './groupContext'
 
 /** `/teacher/groups/:groupId`: remounts per group so no data leaks between groups. */
@@ -17,56 +21,57 @@ export function GroupLayoutRoute() {
 function GroupLayout({ groupId }: { groupId: string }) {
   const load = useCallback((signal: AbortSignal) => fetchGroup(groupId, signal), [groupId])
   const { state, reload, update } = useApiData(load)
-  const groupName = state.status === 'ready' ? state.data.name : 'Grupa'
+  const base = `/teacher/groups/${groupId}`
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ścieżka" className="breadcrumbs -mb-2 text-sm">
-        <ol>
-          <li>
-            <Link to="/teacher" className="text-muted underline underline-offset-2 hover:text-fg">
-              Moje grupy
-            </Link>
-          </li>
-          <li>
-            <Link
-              to={`/teacher/groups/${groupId}`}
-              aria-current="page"
-              className="truncate font-medium text-fg no-underline"
-            >
-              {groupName}
-            </Link>
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Moje grupy', to: '/teacher' },
+          { label: state.status === 'ready' ? state.data.name : 'Grupa' },
+        ]}
+      />
 
-      {state.status === 'loading' && <p className="text-muted">Ładowanie grupy…</p>}
+      {state.status === 'loading' && (
+        <LoadingState label="Ładowanie grupy…" className="flex flex-col gap-4">
+          <Skeleton className="h-10 w-72 max-w-full" />
+          <Skeleton className="h-5 w-96 max-w-full" />
+          <Skeleton className="mt-2 h-11 w-80 max-w-full" />
+        </LoadingState>
+      )}
 
       {state.status === 'error' &&
         (state.error instanceof ApiError && state.error.status === 404 ? (
-          <Alert tone="error">
-            Nie znaleziono grupy. Mogła zostać usunięta albo prowadzi ją inna osoba.{' '}
-            <Link to="/teacher" className="font-medium underline underline-offset-2">
-              Wróć do listy grup
-            </Link>
-          </Alert>
+          <EmptyState
+            title="Nie znaleziono grupy"
+            action={
+              <LinkButton variant="primary" to="/teacher">
+                Wróć do listy grup
+              </LinkButton>
+            }
+          >
+            <p>Mogła zostać usunięta albo prowadzi ją inna osoba.</p>
+          </EmptyState>
         ) : (
-          <ErrorWithRetry message={apiErrorMessage(state.error)} onRetry={reload} />
+          <BlaskNotice tone="error" title="Nie udało się wczytać grupy.">
+            <p className="text-sm">{apiErrorMessage(state.error)}</p>
+            <Button variant="quiet" size="sm" className="self-start" onClick={reload}>
+              Spróbuj ponownie
+            </Button>
+          </BlaskNotice>
         ))}
 
       {state.status === 'ready' && (
         <>
-          <PageHeader
-            title={state.data.name}
-            description={`Studenci: ${state.data.students.length} · utworzona ${dateFormat.format(new Date(state.data.createdAt))}`}
+          <PageHeader title={state.data.name} description={summary(state.data)} />
+          <RouteTabs
+            label="Sekcje grupy"
+            tabs={[
+              { to: base, label: 'Studenci', end: true },
+              { to: `${base}/awards`, label: 'Nagrody' },
+              { to: `${base}/config`, label: 'Punkty i rangi' },
+            ]}
           />
-          <nav aria-label="Sekcje grupy" className="-mt-2 flex gap-1 border-b border-line">
-            <GroupTab to={`/teacher/groups/${groupId}`} end>
-              Studenci
-            </GroupTab>
-            <GroupTab to={`/teacher/groups/${groupId}/awards`}>Nagrody</GroupTab>
-            <GroupTab to={`/teacher/groups/${groupId}/config`}>Punkty i rangi</GroupTab>
-          </nav>
           <Outlet
             context={{ group: state.data, updateGroup: update } satisfies GroupOutletContext}
           />
@@ -76,15 +81,10 @@ function GroupLayout({ groupId }: { groupId: string }) {
   )
 }
 
-/** Section link; NavLink sets aria-current="page" on the active one. */
-function GroupTab({ to, end, children }: { to: string; end?: boolean; children: string }) {
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-focus aria-[current=page]:border-accent aria-[current=page]:text-fg"
-    >
-      {children}
-    </NavLink>
-  )
+/** One plain sentence about the group: how many students and since when. */
+function summary(group: GroupOutletContext['group']) {
+  const count = group.students.length
+  const created = dateFormat.format(new Date(group.createdAt))
+  if (count === 0) return `Grupa utworzona ${created}, na razie bez studentów.`
+  return `${count} ${plural(count, 'student', 'studentów', 'studentów')} w grupie utworzonej ${created}.`
 }

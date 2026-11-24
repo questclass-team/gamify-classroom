@@ -125,3 +125,71 @@ export function SpinnerIcon({ className = 'size-4' }: IconProps) {
     </Icon>
   )
 }
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </Icon>
+  )
+}
+
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10.6 5.6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-2.4 3.2" />
+      <path d="M6.6 6.6C3.9 8.3 2.5 12 2.5 12S6 18.5 12 18.5a9.3 9.3 0 0 0 5.4-1.7" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+    </Icon>
+  )
+}
+
+export function KeyIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="8" cy="15" r="4.5" />
+      <path d="m11.2 11.8 8.3-8.3M16.5 6.5l2.5 2.5M14 9l2 2" />
+    </Icon>
+  )
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </Icon>
+  )
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="9" cy="8" r="3.75" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M15.5 4.4a3.75 3.75 0 0 1 0 7.2M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+    </Icon>
+  )
+}
+
+/** A point reward (the Kronika). */
+export function CoinsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="8.5" cy="8.5" r="5.75" />
+      <path d="M18.2 10.6a5.75 5.75 0 1 1-7.6 7.6" />
+      <path d="M7.5 6.75h1.25v3.75" />
+    </Icon>
+  )
+}
+
+/** A badge award (the Kronika). */
+export function AwardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="8.5" r="5.75" />
+      <path d="m8.6 13.2-1.4 7.8 4.8-2.8 4.8 2.8-1.4-7.8" />
+    </Icon>
+  )
+}

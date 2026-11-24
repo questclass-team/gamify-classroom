@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router'
 import { ApiError } from '../../../api/client'
 import { apiErrorMessage } from '../../../api/errorMessage'
 import {
@@ -23,6 +22,8 @@ import { useApiData } from '../../../api/useApiData'
 import { useAuth } from '../../../auth/authContext'
 import { BlaskConfirmDialog } from '../../../components/blask/BlaskConfirmDialog'
 import { BlaskNotice } from '../../../components/blask/BlaskNotice'
+import { Button, LinkButton } from '../../../components/blask/Button'
+import { EmptyState, LoadingState } from '../../../components/blask/States'
 import type { Currency } from '../../../components/blask/CurrencyMark'
 import { rankForBalance } from '../../../components/blask/ranks'
 import { useGroup } from '../groupContext'
@@ -55,36 +56,35 @@ export function GroupAwardsPage() {
   const { state, reload } = useApiData(load)
 
   return (
-    <div className="blask">
+    <div className="flex flex-col gap-6">
       {group.students.length === 0 ? (
-        <section className="blask-panel flex flex-col items-start gap-3 p-6 sm:p-8">
-          <h2 className="text-xl font-semibold tracking-[-0.01em]">Najpierw dodaj studentów</h2>
-          <p className="max-w-[56ch] text-blask-graphite">
+        <EmptyState
+          title="Najpierw dodaj studentów"
+          action={
+            <LinkButton variant="primary" to={`/teacher/groups/${group.id}`}>
+              Przejdź do zakładki Studenci
+            </LinkButton>
+          }
+        >
+          <p>
             Nagrody przyznajesz osobom z tej grupy, a na razie nikogo w niej nie ma. Dodaj studentów
             w zakładce Studenci, a potem wróć tutaj.
           </p>
-          <Link to={`/teacher/groups/${group.id}`} className="blask-btn blask-btn-primary mt-1">
-            Przejdź do zakładki Studenci
-          </Link>
-        </section>
+        </EmptyState>
       ) : state.status === 'loading' ? (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-          <div className="blask-panel h-96" aria-hidden="true" />
-          <div className="blask-panel h-72" aria-hidden="true" />
-          <p className="sr-only" role="status">
-            Ładowanie nagród…
-          </p>
-        </div>
+        <LoadingState
+          label="Ładowanie nagród…"
+          className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]"
+        >
+          <div className="blask-panel h-96" />
+          <div className="blask-panel h-72" />
+        </LoadingState>
       ) : state.status === 'error' ? (
         <BlaskNotice tone="error" title="Nie udało się wczytać ustawień punktów tej grupy.">
           <p className="text-sm">{apiErrorMessage(state.error)}</p>
-          <button
-            type="button"
-            className="blask-btn blask-btn-sm blask-btn-quiet mt-1 self-start"
-            onClick={reload}
-          >
+          <Button variant="quiet" size="sm" className="mt-1 self-start" onClick={reload}>
             Spróbuj ponownie
-          </button>
+          </Button>
         </BlaskNotice>
       ) : (
         <AwardsWorkspace group={group} config={state.data} />
@@ -117,6 +117,8 @@ function AwardsWorkspace({ group, config }: { group: GroupDetail; config: GroupG
   const [revoking, setRevoking] = useState(false)
   const [revokeError, setRevokeError] = useState<string | null>(null)
   const [revoked, setRevoked] = useState<{ studentId: string; text: string } | null>(null)
+  // Where focus goes once the revoke dialog has closed (the page is inert while it is open).
+  const focusAfterRevoke = useRef<string | null>(null)
 
   const loadBadges = useCallback((signal: AbortSignal) => fetchBadges(group.id, signal), [group.id])
   const { state: badges, reload: reloadBadges, update: updateBadges } = useApiData(loadBadges)
@@ -322,10 +324,8 @@ function AwardsWorkspace({ group, config }: { group: GroupDetail; config: GroupG
       }))
       setRevoked({ studentId: award.studentId, text: `Cofnięto odznakę „${award.badge.name}”.` })
       setPendingRevoke(null)
-      // The button is gone: put focus on the badges heading of the same student.
-      requestAnimationFrame(() =>
-        document.getElementById(`award-detail-${award.studentId}-badges`)?.focus(),
-      )
+      // The button is gone: once the dialog is closed, focus the same student's badges heading.
+      focusAfterRevoke.current = `award-detail-${award.studentId}-badges`
     } catch (error) {
       setRevokeError(
         apiErrorMessage(error, { 404: 'Tej odznaki już nie ma albo osoba opuściła grupę.' }),
@@ -391,7 +391,12 @@ function AwardsWorkspace({ group, config }: { group: GroupDetail; config: GroupG
         busy={revoking}
         error={revokeError}
         onConfirm={confirmRevoke}
-        onClose={() => setPendingRevoke(null)}
+        onClose={() => {
+          setPendingRevoke(null)
+          const target = focusAfterRevoke.current
+          focusAfterRevoke.current = null
+          if (target !== null) document.getElementById(target)?.focus()
+        }}
       >
         {pendingRevoke !== null && (
           <p>

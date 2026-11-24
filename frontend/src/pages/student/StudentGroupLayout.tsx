@@ -1,9 +1,13 @@
-import { Link, NavLink, Outlet, useParams } from 'react-router'
+import { Outlet, useParams } from 'react-router'
 import { fetchMyGroups } from '../../api/student'
 import { useApiData } from '../../api/useApiData'
+import { LinkButton } from '../../components/blask/Button'
+import { Breadcrumbs, RouteTabs } from '../../components/blask/Navigation'
+import { PageHeader } from '../../components/blask/PageHeader'
+import { LoadingState, Skeleton } from '../../components/blask/States'
 import { dateFormat } from '../../format'
 import type { StudentGroupOutletContext } from './studentGroupContext'
-import { GroupNotFound, LoadError } from './StudentParts'
+import { LoadError } from './StudentParts'
 
 /** `/student/groups/:groupId`: remounts per group so no data leaks between groups. */
 export function StudentGroupRoute() {
@@ -12,7 +16,7 @@ export function StudentGroupRoute() {
 }
 
 /**
- * A group of the student: breadcrumb back to Moje grupy, the group's name and teacher, and the
+ * A group of the student: the path back to Moje grupy, the group's name and teacher, and the
  * tabs Mój stan and Ranking. The group comes from the student's own groups, so one the student
  * is not in shows "Nie znaleziono grupy" without asking the game service.
  */
@@ -23,53 +27,54 @@ function StudentGroupLayout({ groupId }: { groupId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ścieżka" className="text-sm">
-        <ol className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-blask-graphite">
-          <li>
-            <Link to="/student" className="text-blask-graphite underline hover:text-blask-ink">
-              Moje grupy
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li className="min-w-0 truncate font-medium text-blask-ink">
-            {state.status === 'ready' ? (group?.name ?? 'Nie znaleziono grupy') : 'Grupa'}
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Moje grupy', to: '/student' },
+          {
+            label: state.status === 'ready' ? (group?.name ?? 'Nie znaleziono grupy') : 'Grupa',
+          },
+        ]}
+      />
 
       {state.status === 'loading' && (
-        <div className="flex flex-col gap-3">
-          <p role="status" className="sr-only">
-            Ładowanie grupy…
-          </p>
-          <span aria-hidden="true" className="blask-skeleton h-10 w-2/3 max-w-xl" />
-          <span aria-hidden="true" className="blask-skeleton h-4 w-56" />
-        </div>
+        <LoadingState label="Ładowanie grupy…">
+          <Skeleton className="h-10 w-2/3 max-w-xl" />
+          <Skeleton className="h-4 w-64" />
+        </LoadingState>
       )}
 
       {state.status === 'error' && (
-        <LoadError title="Nie udało się wczytać grupy." error={state.error} onRetry={reload} />
+        <>
+          <h1 className="sr-only">Grupa</h1>
+          <LoadError title="Nie udało się wczytać grupy." error={state.error} onRetry={reload} />
+        </>
       )}
 
-      {state.status === 'ready' && group === undefined && <GroupNotFound />}
+      {state.status === 'ready' && group === undefined && (
+        <div className="flex flex-col items-start gap-4">
+          <PageHeader
+            title="Nie znaleziono grupy"
+            description="Ta grupa nie istnieje albo nie należysz do niej. Jeśli prowadzący dopiero ma Cię dodać, po dodaniu zobaczysz ją w Moich grupach."
+          />
+          <LinkButton variant="primary" to="/student">
+            Wróć do Moich grup
+          </LinkButton>
+        </div>
+      )}
 
       {group != null && (
         <>
-          <header className="flex flex-col gap-2">
-            <h1 className="blask-page-title">{group.name}</h1>
-            <p className="text-blask-graphite">
-              Prowadzi: {group.teacherName}. Jesteś w grupie od{' '}
-              {dateFormat.format(new Date(group.joinedAt))}.
-            </p>
-          </header>
-          <nav aria-label="Sekcje grupy" className="blask-tabs">
-            <NavLink to={base} end className="blask-tab">
-              Mój stan
-            </NavLink>
-            <NavLink to={`${base}/ranking`} className="blask-tab">
-              Ranking
-            </NavLink>
-          </nav>
+          <PageHeader
+            title={group.name}
+            description={`Prowadzi: ${group.teacherName}. W grupie od ${dateFormat.format(new Date(group.joinedAt))}.`}
+          />
+          <RouteTabs
+            label="Sekcje grupy"
+            tabs={[
+              { to: base, label: 'Mój stan', end: true },
+              { to: `${base}/ranking`, label: 'Ranking' },
+            ]}
+          />
           <Outlet context={{ group } satisfies StudentGroupOutletContext} />
         </>
       )}
