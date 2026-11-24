@@ -1,9 +1,13 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { RequireRole, RootRedirect } from './auth/guards'
 import { AppLayout } from './layout/AppLayout'
+import { StudentLayout } from './layout/StudentLayout'
 import { ImportAccountsPage } from './pages/admin/ImportAccountsPage'
 import { LoginPage } from './pages/LoginPage'
-import { StudentHomePage } from './pages/student/StudentHomePage'
+import { MyGroupsPage } from './pages/student/MyGroupsPage'
+import { MyStatePage } from './pages/student/MyStatePage'
+import { RankingPage } from './pages/student/RankingPage'
+import { StudentGroupRoute } from './pages/student/StudentGroupLayout'
 import { GroupAwardsPage } from './pages/teacher/awards/GroupAwardsPage'
 import { GroupConfigPage } from './pages/teacher/GroupConfigPage'
 import { GroupLayoutRoute } from './pages/teacher/GroupLayout'
@@ -42,7 +46,20 @@ export const router = createBrowserRouter([
   {
     element: <RequireRole role="student" />,
     children: [
-      { element: <AppLayout />, children: [{ path: '/student', element: <StudentHomePage /> }] },
+      {
+        element: <StudentLayout />,
+        children: [
+          { path: '/student', element: <MyGroupsPage /> },
+          {
+            path: '/student/groups/:groupId',
+            element: <StudentGroupRoute />,
+            children: [
+              { index: true, element: <MyStatePage /> },
+              { path: 'ranking', element: <RankingPage /> },
+            ],
+          },
+        ],
+      },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

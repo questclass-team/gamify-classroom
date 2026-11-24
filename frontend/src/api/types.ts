@@ -132,6 +132,43 @@ export interface AddGroupStudentRequest {
   studentId: string
 }
 
+// ---- core service: the signed-in student's profile and groups (student only, 403 for others) ----
+
+export const NICKNAME_MIN_LENGTH = 3
+export const NICKNAME_MAX_LENGTH = 24
+
+/**
+ * GET /api/core/me/profile -> StudentProfile; the nickname is null until the student sets one.
+ * Rankings show only nicknames and never fall back to a name or login.
+ */
+export interface StudentProfile {
+  nickname: string | null
+}
+
+/**
+ * PUT /api/core/me/profile -> 200 StudentProfile with the nickname as stored (trimmed, NFC).
+ * 400 problem details with `errors.Nickname` when it breaks the rules: NICKNAME_MIN_LENGTH to
+ * NICKNAME_MAX_LENGTH characters of letters (with combining marks) and digits of any script,
+ * spaces, '_', '-' and '.', starting and ending with a letter or digit.
+ * 409 `Profile.NicknameTaken` when another account has it in any letter case.
+ */
+export interface UpdateProfileRequest {
+  nickname: string
+}
+
+/**
+ * Item of GET /api/core/me/groups: the groups the caller is a member of, in Polish alphabetical
+ * order; [] when none.
+ */
+export interface MyGroup {
+  id: string
+  name: string
+  /** Display name of the group's teacher (never another student's). */
+  teacherName: string
+  /** ISO 8601 timestamp of joining the group. */
+  joinedAt: string
+}
+
 // ---- game service: points (story currency) and ranks per group ----
 
 export const CURRENCY_NAME_MAX_LENGTH = 30
@@ -277,6 +314,60 @@ export interface BadgeAward {
   createdAt: string
 }
 
+// ---- game service: the student's own state and the group ranking ----
+
+/**
+ * GET /api/game/groups/{groupId}/me -> StudentGroupState (a student who is a member).
+ * 403 for teachers and admins; 404 when the caller is not in the group or it does not exist.
+ */
+export interface StudentGroupState {
+  groupId: string
+  /** The caller's nickname from Core, null until set. */
+  nickname: string | null
+  currencyName: string
+  currencyIconUrl: string | null
+  /** 0 when never awarded. */
+  balance: number
+  /** Null when no rank is reached (or the group has no ranks). */
+  rank: RankRef | null
+  /** Null at the top rank or when the group has no ranks. */
+  nextRank: RankRef | null
+  /** Active badge awards, newest first. */
+  badges: BadgeAward[]
+  /** Point rewards, newest first. */
+  rewards: RewardHistoryItem[]
+}
+
+export const RANKING_BY = ['points', 'badges'] as const
+export type RankingBy = (typeof RANKING_BY)[number]
+
+/** One member in a ranking: only the nickname, never a name, login or id. */
+export interface RankingEntry {
+  /** Standard competition ranking on the primary criterion (1, 1, 3). */
+  position: number
+  nickname: string | null
+  balance: number
+  rank: RankRef | null
+  /** Active badge awards in this group. */
+  badgeCount: number
+  /** True only for the calling student (always false for a teacher). */
+  isMe: boolean
+}
+
+/**
+ * GET /api/game/groups/{groupId}/ranking?by=points|badges (default points) -> GroupRanking, for a
+ * member student or the owning teacher. Every member is an entry, ordered by the primary criterion
+ * (balance or badgeCount), then the other one, then nickname (nulls last). 400 `{ "by": [...] }`
+ * for another `by`; 404 when the caller is not in the group; 403 for admins.
+ */
+export interface GroupRanking {
+  groupId: string
+  by: RankingBy
+  currencyName: string
+  currencyIconUrl: string | null
+  entries: RankingEntry[]
+}
+
 /**
  * Game service errors are Django REST framework bodies, not problem details: `{ "detail": "…" }`
  * for 403/404/409/503 and `{ "<field>": ["…"] }` for 400.
@@ -286,7 +377,10 @@ export type GameErrorBody = { detail?: string } & Record<string, unknown>
 /** Error body (ASP.NET Core / RFC 9457 problem details). */
 export interface ProblemDetails {
   type?: string
+  /** Core puts its error code here, e.g. `Profile.NicknameTaken`. */
   title?: string
   status?: number
   detail?: string
+  /** Validation errors by PascalCase field name (400 from Core), e.g. `{ "Nickname": ["…"] }`. */
+  errors?: Record<string, string[]>
 }

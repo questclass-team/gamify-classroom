@@ -31,6 +31,21 @@ export const mockUsers: CurrentUser[] = [
   { id: 'u-student8', login: 'jwozniak', displayName: 'Julia Woźniak', role: 'student' },
 ]
 
+/**
+ * Student nicknames (Core `User.Nickname`): unique ignoring letter case, null until set. `student`
+ * starts without one, so the ranking prompt and the nickname dialog can be tried at once.
+ */
+export const mockNicknames = new Map<string, string | null>([
+  ['u-student', null],
+  ['u-student2', 'Cichy Lis'],
+  ['u-student3', 'Nocna Sowa'],
+  ['u-student4', 'Kwantowy Kot'],
+  ['u-student5', null],
+  ['u-student6', 'Zielony Smok'],
+  ['u-student7', 'Bystry Bóbr'],
+  ['u-student8', 'Mała Mi'],
+])
+
 /** Valid in LDAP but never imported: login must be rejected with 403. */
 export const mockLdapOnlyLogins = ['nowy']
 
@@ -62,7 +77,11 @@ export const mockGroups: MockGroup[] = [
     id: 'g-3',
     name: 'Bazy danych – grupa 2',
     teacherId: 'u-teacher2',
-    members: [{ studentId: 'u-student', addedAt: '2026-10-07T12:10:00Z' }],
+    members: [
+      { studentId: 'u-student', addedAt: '2026-10-07T12:10:00Z' },
+      { studentId: 'u-student5', addedAt: '2026-10-07T12:11:00Z' },
+      { studentId: 'u-student7', addedAt: '2026-10-07T12:12:00Z' },
+    ],
     createdAt: '2026-10-07T12:00:00Z',
   },
 ]
@@ -124,7 +143,7 @@ function reward(
   return { id, groupId: 'g-1', studentId, points, reason, awardedBy: 'u-teacher', createdAt }
 }
 
-/** Rewards in g-1 from the last weeks of the semester. */
+/** Rewards from the last weeks of the semester: mostly g-1, a few in g-3 (another teacher). */
 export const mockRewards: MockReward[] = [
   reward(1, 'u-student', 40, 'Aktywność na zajęciach', '2026-10-13T09:40:00Z'),
   reward(2, 'u-student2', 30, 'Aktywność na zajęciach', '2026-10-13T09:41:00Z'),
@@ -139,6 +158,25 @@ export const mockRewards: MockReward[] = [
   reward(11, 'u-student', 25, 'Prezentacja przeglądu sprintu', '2026-11-17T12:30:00Z'),
   reward(12, 'u-student6', 180, 'Najlepsza prezentacja przeglądu sprintu', '2026-11-17T12:31:00Z'),
   reward(13, 'u-student2', 90, 'Przegląd kodu dla innej drużyny', '2026-11-19T14:10:00Z'),
+  ...[
+    { id: 14, studentId: 'u-student7', points: 12, reason: 'Kolokwium z SQL', at: '2026-11-04' },
+    { id: 15, studentId: 'u-student', points: 8, reason: 'Zapytania z JOIN', at: '2026-11-04' },
+    {
+      id: 16,
+      studentId: 'u-student',
+      points: 5,
+      reason: 'Aktywność na zajęciach',
+      at: '2026-11-18',
+    },
+  ].map(({ id, studentId, points, reason, at }) => ({
+    id,
+    groupId: 'g-3',
+    studentId,
+    points,
+    reason,
+    awardedBy: 'u-teacher2',
+    createdAt: `${at}T13:20:00Z`,
+  })),
 ]
 
 /** Badge catalog of the game service (all groups). */
