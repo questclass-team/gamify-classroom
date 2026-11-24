@@ -68,6 +68,10 @@ namespace QuestClass.Core.Common.Persistence.Configurations
                 .IsUnique()
                 .HasDatabaseName(NicknameIndexName);
 
+            // No check constraint with the keys: the set grows with the frontend's pictures, the API checks the key.
+            builder.Property(user => user.Avatar)
+                .HasMaxLength(Avatars.KeyMaxLength);
+
             // Stored as "student" / "teacher" / "admin", the same values the API uses.
             builder.Property(user => user.Role)
                 .HasConversion(

@@ -43,7 +43,7 @@ namespace QuestClass.Core.Features.Groups.Roster
             var roster = await _groupRepository.GetRosterAsync(group.Id, cancellationToken);
 
             return Result<IReadOnlyList<RosterEntryResponse>>.Success(roster
-                .Select(entry => new RosterEntryResponse(entry.StudentId, entry.Nickname))
+                .Select(entry => new RosterEntryResponse(entry.StudentId, entry.Nickname, entry.Avatar))
                 .ToList());
         }
     }

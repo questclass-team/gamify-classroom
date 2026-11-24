@@ -26,6 +26,14 @@ ENTRYPOINT ["dotnet", "ef", "database", "update", "--project", "src", "--configu
 
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+
+# The Alpine .NET images run without ICU (globalization invariant mode), where string.Normalize silently does
+# nothing: nicknames would not be composed to NFC, unlike in the tests. ICU makes the container behave like them.
+# Not pinned: Alpine drops old package versions, so pins break the build.
+# hadolint ignore=DL3018
+RUN apk add --no-cache icu-libs
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 WORKDIR /app
 COPY --from=build /app/publish .
 

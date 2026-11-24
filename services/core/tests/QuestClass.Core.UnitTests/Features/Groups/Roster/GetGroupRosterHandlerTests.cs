@@ -13,7 +13,8 @@ namespace QuestClass.Core.UnitTests.Features.Groups.Roster
         private readonly GetGroupRosterHandler _handler;
         private readonly Guid _teacherId = Guid.CreateVersion7();
         private readonly Group _group;
-        private readonly RosterEntry[] _roster = [new(Guid.CreateVersion7(), "Cichy Lis"), new(Guid.CreateVersion7(), null)];
+        private readonly RosterEntry[] _roster =
+            [new(Guid.CreateVersion7(), "Cichy Lis", "fox"), new(Guid.CreateVersion7(), null, null)];
 
         public GetGroupRosterHandlerTests()
         {
@@ -30,8 +31,8 @@ namespace QuestClass.Core.UnitTests.Features.Groups.Roster
             var result = await _handler.HandleAsync(_group.Id, _teacherId, Role.Teacher);
 
             result.Value.ShouldBe([
-                new RosterEntryResponse(_roster[0].StudentId, "Cichy Lis"),
-                new RosterEntryResponse(_roster[1].StudentId, null)
+                new RosterEntryResponse(_roster[0].StudentId, "Cichy Lis", "fox"),
+                new RosterEntryResponse(_roster[1].StudentId, null, null)
             ]);
             await _groups.DidNotReceiveWithAnyArgs().GetForMemberAsync(default, default);
         }

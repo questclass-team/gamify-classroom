@@ -98,9 +98,15 @@ namespace QuestClass.Core.Repositories
 
         public async Task<bool> TrySetNicknameAsync(User user, string nickname, CancellationToken cancellationToken = default)
         {
+            // Tracked, the change is detected per property: only the nickname is written, so a concurrent change of
+            // another column (the avatar) is not overwritten with the value read before it.
+            if (_dbContext.Entry(user).State == EntityState.Detached)
+            {
+                _dbContext.Users.Attach(user);
+            }
+
             var previousNickname = user.Nickname;
             user.Nickname = nickname;
-            _dbContext.Users.Update(user);
 
             try
             {
@@ -120,6 +126,15 @@ namespace QuestClass.Core.Repositories
                 _dbContext.Entry(user).State = EntityState.Unchanged;
                 return false;
             }
+        }
+
+        public Task SetAvatarAsync(Guid userId, string? avatar, CancellationToken cancellationToken = default)
+        {
+            // One column only, so a concurrent nickname change is not overwritten. The soft delete filter applies:
+            // a deleted account is not changed.
+            return _dbContext.Users
+                .Where(user => user.Id == userId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.Avatar, avatar), cancellationToken);
         }
 
         public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)

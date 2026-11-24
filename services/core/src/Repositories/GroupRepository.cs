@@ -87,13 +87,13 @@ namespace QuestClass.Core.Repositories
             Guid groupId,
             CancellationToken cancellationToken = default)
         {
-            // Only id and nickname leave the database; names and logins are never read here.
+            // Only id, nickname and avatar leave the database; names and logins are never read here.
             return await (
                     from member in _dbContext.GroupMembers
                     join user in _dbContext.Users on member.StudentId equals user.Id
                     where member.GroupId == groupId
                     orderby user.Nickname == null, EF.Functions.Collate(user.Nickname, Collations.Polish), user.Id
-                    select new RosterEntry(user.Id, user.Nickname))
+                    select new RosterEntry(user.Id, user.Nickname, user.Avatar))
                 .ToListAsync(cancellationToken);
         }
 

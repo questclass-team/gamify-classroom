@@ -26,11 +26,12 @@ namespace QuestClass.Core.IntegrationTests.Features.Users
 
             var response = await SendAsAsync(student, HttpMethod.Get, ProfileUrl);
 
-            // frontend/src/api/types.ts: StudentProfile { nickname: string | null }
+            // docs/api.md: StudentProfile { nickname: string | null, avatar: string | null }
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
             var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-            body.EnumerateObject().Select(property => property.Name).ShouldBe(["nickname"]);
+            body.EnumerateObject().Select(property => property.Name).ShouldBe(["nickname", "avatar"]);
             body.GetProperty("nickname").ValueKind.ShouldBe(JsonValueKind.Null);
+            body.GetProperty("avatar").ValueKind.ShouldBe(JsonValueKind.Null);
         }
 
         [Fact]

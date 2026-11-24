@@ -20,7 +20,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Groups
         {
             var teacher = await AddUserAsync("jkowalski", Role.Teacher);
             var group = await AddGroupAsync(teacher);
-            var lis = await AddUserAsync("kwojcik", nickname: "cichy Lis");
+            var lis = await AddUserAsync("kwojcik", nickname: "cichy Lis", avatar: "fox");
             var orzel = await AddUserAsync("anowak", nickname: "Dzielny Orzeł");
             var anonymous = await AddUserAsync("pzielinski");
             var outsider = await AddUserAsync("mlis", nickname: "Obcy");
@@ -34,9 +34,9 @@ namespace QuestClass.Core.IntegrationTests.Features.Groups
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
             (await response.Content.ReadFromJsonAsync<List<RosterEntryResponse>>()).ShouldBe([
                 // Letter case is ignored: byte order would put "Dzielny" before "cichy".
-                new RosterEntryResponse(lis.Id, "cichy Lis"),
-                new RosterEntryResponse(orzel.Id, "Dzielny Orzeł"),
-                new RosterEntryResponse(anonymous.Id, null)
+                new RosterEntryResponse(lis.Id, "cichy Lis", "fox"),
+                new RosterEntryResponse(orzel.Id, "Dzielny Orzeł", null),
+                new RosterEntryResponse(anonymous.Id, null, null)
             ]);
         }
 
@@ -59,11 +59,11 @@ namespace QuestClass.Core.IntegrationTests.Features.Groups
                 body.ShouldNotContain(personalData);
             }
 
-            // Game service contract: [{ studentId, nickname | null }]
+            // Game service contract: [{ studentId, nickname | null, avatar | null }]
             var items = JsonSerializer.Deserialize<JsonElement>(body).EnumerateArray().ToList();
             items.Count.ShouldBe(2);
             items.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name)
-                .SequenceEqual(new[] { "studentId", "nickname" }));
+                .SequenceEqual(new[] { "studentId", "nickname", "avatar" }));
             items[0].GetProperty("studentId").GetGuid().ShouldBe(student.Id);
             items[1].GetProperty("nickname").ValueKind.ShouldBe(JsonValueKind.Null);
         }
@@ -82,7 +82,7 @@ namespace QuestClass.Core.IntegrationTests.Features.Groups
             var response = await SendAsAsync(teacher, HttpMethod.Get, RosterUrl(group.Id));
 
             (await response.Content.ReadFromJsonAsync<List<RosterEntryResponse>>()).ShouldBe([
-                new RosterEntryResponse(student.Id, "Cichy Lis")
+                new RosterEntryResponse(student.Id, "Cichy Lis", null)
             ]);
         }
 

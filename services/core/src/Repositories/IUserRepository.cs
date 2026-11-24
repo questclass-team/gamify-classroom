@@ -43,6 +43,12 @@ namespace QuestClass.Core.Repositories
         /// </summary>
         Task<bool> TrySetNicknameAsync(User user, string nickname, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Sets only the avatar column of the account (null removes the avatar); other columns, such as a nickname
+        /// changed at the same moment, are not touched.
+        /// </summary>
+        Task SetAvatarAsync(Guid userId, string? avatar, CancellationToken cancellationToken = default);
+
         /// <summary>Soft-deletes the account: the row stays, it only disappears from queries.</summary>
         Task DeleteAsync(User user, CancellationToken cancellationToken = default);
     }

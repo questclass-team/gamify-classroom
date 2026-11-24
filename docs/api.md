@@ -124,17 +124,29 @@ means it is, `401`/`403`/`404` that it is not.
 ### Student profile, student groups and group roster
 
 A student's nickname is the only name other students ever see (rankings, FR-21, NFR-03). It is `null` until the student
-sets it and is never replaced by a name or login.
+sets it and is never replaced by a name or login. Next to it the student may show an avatar chosen from a ready-made
+set (see below).
 
 | Endpoint | Who | Request | Responses |
 |---|---|---|---|
 | `GET /api/core/me/profile` | student | — | `200 StudentProfile` |
 | `PUT /api/core/me/profile` | student | `{ "nickname" }` | `200 StudentProfile` with the nickname as stored (trimmed); `400` invalid nickname (`errors.Nickname`); `409 Profile.NicknameTaken` another account has it in any letter case |
+| `PUT /api/core/me/avatar` | student | `{ "avatar": "fox" }`, or `null` (or no field) to remove it | `200 StudentProfile`; `400` not one of the keys below (`errors.Avatar`) |
 | `GET /api/core/me/groups` | student | — | `200 MyGroup[]`: the groups the caller is a member of, in Polish alphabetical order like the teacher's list; `[]` when none |
 | `GET /api/core/groups/{groupId}/roster` | the group's teacher or a student in it | — | `200 RosterEntry[]`: current members only; `404 Groups.NotFound` missing or deleted group, another teacher's group, a group the student is not in, or an id that is not a UUID |
 
-Other roles get `403` (admins too, also for the roster), `401` without a token. `GET`/`PUT /me/profile` also answer
-`401 Auth.SessionUserNotFound` when the account was deleted after login.
+Other roles get `403` (admins too, also for the roster), `401` without a token. `GET`/`PUT /me/profile` and
+`PUT /me/avatar` also answer `401 Auth.SessionUserNotFound` when the account was deleted after login.
+
+**Avatars.** A ready-made set, never an uploaded picture: the vision document wants the nickname and avatar to keep
+students anonymous to each other, and photos would be personal data (NFR-03). Core stores and checks only the key; the
+frontend draws one picture per key. Keys, exactly as written:
+
+`fox`, `owl`, `hedgehog`, `cat`, `wolf`, `raven`, `dragon`, `phoenix`, `comet`, `star`, `moon`, `planet`, `spark`,
+`aurora`, `wave`, `galaxy`
+
+Adding an avatar means a picture in the frontend and its key in `Avatars.Keys` in core. The avatar and the nickname are
+saved independently: changing one never undoes a change of the other made at the same moment.
 
 **Nickname rules.** Trimmed and composed to Unicode NFC first, then 3–24 characters: letters (with their combining
 marks) and digits of any script, spaces, `_`, `-` and `.`; it starts and ends with a letter or digit. Unique across the
@@ -144,21 +156,24 @@ re-import. Only students set one; saving one's own nickname again, or with other
 
 ```json
 // StudentProfile
-{ "nickname": "Cichy Lis" }          // { "nickname": null } until set
+{ "nickname": "Cichy Lis", "avatar": "fox" }   // null until set
 
 // MyGroup
 { "id": "<uuid>", "name": "Algorytmy – grupa 1", "teacherName": "Jan Kowalski", "joinedAt": "2026-11-18T10:15:00+00:00" }
 
 // RosterEntry: by nickname in Polish alphabetical order, students without one last; no names or logins
-{ "studentId": "<uuid>", "nickname": "Cichy Lis" }
+{ "studentId": "<uuid>", "nickname": "Cichy Lis", "avatar": "fox" }
 
 // 400 from PUT /me/profile
 { "title": "Validation Failed", "status": 400, "errors": { "Nickname": ["Nickname must have 3 to 24 characters: …"] } }
+
+// 400 from PUT /me/avatar
+{ "title": "Validation Failed", "status": 400, "errors": { "Avatar": ["Avatar must be null or one of: fox, owl, …"] } }
 ```
 
 Game checks that a student or teacher belongs to a group by calling `GET /api/core/groups/{groupId}/roster` with the
 caller's token: `200` means they do (a student finds their own id, the token's `sub`, in the list), `401`/`403`/`404`
-that they do not. The same list gives the nicknames for rankings.
+that they do not. The same list gives the nicknames and avatars for rankings.
 
 ## Game service
 
@@ -438,7 +453,7 @@ http://localhost:8080/api/game/schema/
 ## Current scope
 
 Core issues the tokens (login, refresh, logout, `/me`), imports accounts, keeps the teachers' groups and the students'
-nicknames, and lists a student's groups and a group's roster; Game verifies the same tokens.
+nicknames and avatars, and lists a student's groups and a group's roster; Game verifies the same tokens.
 Both use the same `JWT_SECRET` (Core: `Jwt__Secret`), issuer `questclass-core`, audience `questclass` and
 `HS256` — checked end to end: a token from Core is accepted by `GET /api/game/auth/me/` with the same user id
 and role.
