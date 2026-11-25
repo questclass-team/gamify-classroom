@@ -6,7 +6,7 @@
 | **Miejsce** | Laboratorium, WMiI UAM |
 | **Sprint** | 18.11.2026 – 25.11.2026 |
 | **Product Owner** | Artem Isianov |
-| **Scrum Master** | Kiryl Kavaliou |
+| **Scrum Master** | Mykyta Kyslytsia |
 | **Deweloperzy** | Mykyta Kyslytsia, Piotr Codogni, Kajetan Muczyński, Kiryl Kavaliou |
 
 ## 🎯 Cel spotkania
