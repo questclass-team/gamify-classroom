@@ -23,7 +23,7 @@ Cel sprintu został osiągnięty.
 
 | Klucz | User story | Wynik |
 |---|---|---|
-| SCRUM-10 | Przyznawanie punktów i odznak | ✅ przyjęta funkcjonalnie; testy SCRUM-35 przechodzą do sprintu 3 |
+| SCRUM-10 | Przyznawanie punktów i odznak | ✅ przyjęta |
 | SCRUM-11 | Profil, postępy i ranking | ✅ przyjęta |
 
 ## 🧩 Przyrost
@@ -34,7 +34,7 @@ Cel sprintu został osiągnięty.
 | Serwis core – Kiryl | nicki studentów (unikalne bez względu na wielkość liter), grupy studenta, skład grupy, awatary z gotowego zestawu | #27, #32 |
 | Serwis game – Mykyta | stan studenta w grupie i ranking według nicków (punkty albo odznaki), awatar w stanie i w rankingu | #28, #34 |
 | Frontend – Mykyta | widok nagród z historią; widoki studenta: moje grupy, mój stan, ranking, nick i awatar; wygląd Blask w całej aplikacji; README, ikona strony | #29, #30, #31, #33, #35, #36 |
-| Środowisko – Kajetan | aktualizacje zależności w CI i obrazach Dockera | #11, #38 |
+| Testy i środowisko – Kajetan | testy salda, przeliczania rang i historii nagród (SCRUM-35); aktualizacje zależności w CI i obrazach Dockera | #11, #38 |
 
 ## 💬 Omówione tematy
 
@@ -44,13 +44,11 @@ Cel sprintu został osiągnięty.
 
 ## ⚠️ Problemy i ryzyka
 
-- **SCRUM-35 niezrealizowane** – testy salda, rang i historii nie były w podziale pracy na planowaniu, więc SCRUM-10 nie może jeszcze przejść do *Completed*.
 - **Nierówne obciążenie** – większość zadań frontendu i części game trafiła do jednej osoby; w sprincie 3 dzielimy pracę równiej.
 - **Statusy w Jirze** – część zadań stała w *To Do* lub *Testing* mimo scalonych PR; statusy aktualizujemy zaraz po scaleniu.
 
 ## ✅ Ustalenia
 
-- SCRUM-11 jest zamknięta – Product Owner przenosi ją do *Completed*.
-- SCRUM-32, SCRUM-33 i SCRUM-34 przechodzą do *Completed*; SCRUM-35 przechodzi do sprintu 3, a SCRUM-10 zamykamy po nim.
-- Zakres KM1 (epik SCRUM-5) jest gotowy – po zamknięciu SCRUM-10 oznaczamy `main` tagiem `v0.1`.
+- SCRUM-10 i SCRUM-11 są zamknięte – wszystkie podzadania (SCRUM-32–39, 54, 55) są w *Completed*.
+- Zakres KM1 (epik SCRUM-5) jest gotowy – oznaczamy `main` tagiem `v0.1`.
 - W sprincie 3 Scrum Masterem jest Mykyta (rotacja ról ustalona w sprincie 1).
